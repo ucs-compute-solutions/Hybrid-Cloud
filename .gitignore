@@ -137,3 +137,9 @@ dmypy.json
 
 debug/
 playbooks/*tme*
+
+# Mine
+CVD_HC_OCP-HXFI/inventory/group_vars/cisco_network_dc_fabric/vault
+CVD_HC_OCP-HXFI/inventory/group_vars/cisco_intersight_hx_std/vault
+CVD_HC_OCP-HXFI/inventory/group_vars/cisco_intersight/vault
+CVD_HC_OCP-HXFI/inventory/group_vars/cisco_hx_fi/vault
