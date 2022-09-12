@@ -1,0 +1,7 @@
+---
+#[cisco_intersight:vars]
+intersight_api_private_key: "{{ vault_intersight_api_private_key }}"
+intersight_api_key_id: "{{ vault_intersight_api_key_id }}"
+
+
+

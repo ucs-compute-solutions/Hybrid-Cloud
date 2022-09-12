@@ -1,0 +1,15 @@
+---
+# Sensitive Data for a HyperFlex Cluster - Saved in Ansible Vault
+
+#[cisco_dc_fabric:vars]
+apic_username: "admin"
+apic_password: "{{vault_apic_password}}"
+
+# Parameters for configuring a VPC to the compute cluster 
+# 
+vpc_explicit_grp_name:              "HC_RG"
+
+# If using Cisco FIs
+fi_a_ipg:                           "Hybrid Cloud Resource Group"
+fi_b_ipg:                           ""
+

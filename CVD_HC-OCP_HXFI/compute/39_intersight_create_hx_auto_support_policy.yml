@@ -1,0 +1,71 @@
+---
+
+- name: Define anchor for Intersight API login info 
+  set_fact:
+    intersight_api_login_info: &intersight_api_login_info
+      api_private_key: "{{ intersight_api_private_key }}"
+      api_key_id:      "{{ intersight_api_key_id }}"
+      api_uri:         "{{ intersight_api_uri | default(omit) }}"
+      validate_certs:  "{{ intersight_validate_certs | default(omit) }}"
+      #state:           "{{ intersight_state | default(omit) }}"
+
+- debug:
+    msg: "API Info is: {{ intersight_api_login_info }}"
+  tags: [never, debug]
+
+- name: Create HyperFlex Auto Support Policy and return Moid
+  intersight_rest_api:
+    <<: *intersight_api_login_info
+    resource_path: /hyperflex/AutoSupportPolicies
+    query_params:
+      $filter: "Name eq '{{ hx_auto_support_policy_name }}'"
+    api_body: {
+      "Organization": {
+        "Moid":                  "{{ organization_moid }}"
+      },
+      "Name":                    "{{ hx_auto_support_policy_name }}",
+      "AdminState":              "{{ hx_auto_support_enable }}",
+      "ServiceTicketReceipient": "{{ hx_auto_support_recipient }}",
+      "Tags": [
+        {
+        "Key":                   "Provisioned by:",
+        "Value":                 "Intersight-Ansible"
+        }
+      ],
+      "ClusterProfiles": [
+        {
+        "Moid":                  "{{ hx_cluster_profile_moid }}"
+        }
+      ]
+    }
+    state: present
+  register: hx_auto_support_policy_response
+  delegate_to: local_host
+  tags: 
+    - hx_auto_support_policy
+    #- never
+
+- name: Query for an existing HyperFlex Auto Support Policy and return Moid
+  intersight_rest_api:
+    <<: *intersight_api_login_info
+    resource_path: /hyperflex/AutoSupportPolicies
+    query_params:
+      $filter: "Name eq '{{ hx_auto_support_policy_name }}'"
+    state: present
+  register: hx_auto_support_policy_response
+  delegate_to: local_host
+  tags: 
+    - hx_auto_support_policy
+    - never
+
+
+- name: Moid for HyperFlex Auto Support Policy
+  set_fact:
+    hx_auto_support_policy_moid: "{{ hx_auto_support_policy_response.api_response.Moid }}"
+
+- debug:
+    msg: "Created HyperFlex Auto Support Policy '{{ hx_auto_support_policy_name }}' with Moid: '{{ hx_auto_support_policy_moid }}'"  
+  #tags: [never, debug]
+
+
+

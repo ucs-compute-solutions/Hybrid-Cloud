@@ -1,0 +1,19 @@
+# Python
+.Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg
+
+# Python Envs
+.env
+.venv
+env/
+venv/
+
+# Apple Mac OS
+.DS_Store
+
+# Image Files
+.ova
+.bin

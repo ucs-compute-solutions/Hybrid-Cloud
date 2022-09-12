@@ -1,0 +1,95 @@
+---
+
+- name: Define anchor for ACI API login info
+  block:
+  - set_fact:
+      aci_api_login_info: &aci_api_login_info
+        hostname:             "{{ inventory_hostname }}"
+        username:             "{{ apic_username }}"
+        password:             "{{ apic_password }}"
+        use_proxy:            "{{ apic_use_proxy | default(false) }}"
+        use_ssl:              "{{ apic_use_ssl | default(true) }}"
+        validate_certs:       "{{ apic_validate_certs | default(false) }}"
+      
+      protection_group_name:  "vpc-explictGrp1103104"
+      protection_group_id:    12
+      #vpc_domain_policy:      ""
+      switch_1_id: 103
+      switch_2_id: 104
+
+  - debug:
+      msg: "API Info is: {{ aci_api_login_info }}"
+    tags: [never, debug]
+
+
+- name: Create VPC Protection Group for a given Switch pair
+  block:
+    - name: Create Explicit VPC Protection Group
+      vars:
+      cisco.aci.aci_switch_policy_vpc_protection_group:
+        <<: *aci_api_login_info
+        annotation: orchestrator:ansible
+        protection_group: "{{ protection_group_name }}"
+        protection_group_id: "{{ protection_group_id }}"
+        #vpc_domain_policy: "{{ vpc_domain_policy }}"
+        switch_1_id: "{{ switch_1_id }}"
+        switch_2_id: "{{ switch_2_id }}"
+        state: present
+      register: create_vpc_protection_group_response
+      delegate_to: local_host
+      tags: 
+        - vpc_protection_group
+        #- never
+
+    - name: Save response from create VPC Protection Group
+      set_fact:
+        vpc_protection_group_response: "{{ create_vpc_protection_group_response }}"
+
+    - debug:
+        msg: "Created Explicit VPC Protection Group: {{ create_vpc_protection_group_response }}"  
+      #tags: [never, debug]
+
+# - name: Query for a specific VPC Protection Group 
+#   block:
+#     - name: Query for a specific Explicit VPC Protection Group
+#       vars:
+#       cisco.aci.aci_switch_policy_vpc_protection_group:
+#         <<: *aci_api_login_info
+#         protection_group: "{{ protection_group_name }}"
+#         protection_group_id: "{{ protection_group_id }}"
+#         state: query
+#       register: query_result
+#       delegate_to: local_host
+#       tags: 
+#         - query_vpc_protection_group
+#         #- never
+
+#     - name: Save response from query 
+#       set_fact:
+#         vpc_protection_group_query_result: "{{ query_result }}"
+
+#     - debug:
+#         msg: "Result of Query: '{{ query_result }}'"  
+#       #tags: [never, debug]
+    
+
+# - name: Query for all VPC Protection Groups on the fabric
+#   block:
+#     - name: Query for all VPC Protection Groups on the fabric
+#       vars:
+#       cisco.aci.aci_switch_policy_vpc_protection_group:
+#         <<: *aci_api_login_info
+#         state: query
+#       register: query_result
+#       delegate_to: local_host
+#       tags: 
+#         - query_vpc_protection_group_all
+#         #- never
+
+#     - name: Save response from query 
+#       set_fact:
+#         vpc_protection_group_query_all_result: "{{ query_result }}"
+
+#     - debug:
+#         msg: "Result of Query: '{{ query_result }}'"  
+#       #tags: [never, debug]
