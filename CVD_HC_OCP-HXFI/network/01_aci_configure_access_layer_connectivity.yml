@@ -1,0 +1,156 @@
+---
+
+  ############################################################################################
+  #    
+  # To test the tasks in this file, uncomment the info below to make it a playbook
+  #
+  ############################################################################################
+  
+  # - name: API Login to Cisco APIC 
+  #   hosts: "{{ group | default('cisco_network_dc_fabric') }}"
+  #   connection: local
+  #   gather_facts: False
+  #   vars_files:
+  #      - ../vars/group_vars/aci_variables.yml
+  #   vars:
+  #     aci_api_login_info: &aci_api_login_info
+  #       hostname:         "{{ inventory_hostname }}"
+  #       username:         "{{ apic_username }}"
+  #       password:         "{{ apic_password }}"
+  #       use_proxy:        "{{ apic_use_proxy | default(false) }}"
+  #       validate_certs:   "{{ apic_validate_certs | default(false) }}"
+  #     Dependencies:
+  #       - Test:           "{{  }}"
+  #   tasks:
+  #     - debug:
+  #         msg: "API Info is: {{ intersight_api_login_info }}"
+  #       tags: [never, debug]
+
+  ############################################################################################
+  #    
+  # Fabric Access Policies: Pools, Domain, AAEP
+  #
+  ############################################################################################
+  
+
+        # VLAN Pools, Domain, AAEP
+      - name: Create VLAN pools for compute infrastructure
+        include_tasks: 011_aci_create_vlan_pool.yml
+        vars:
+          vlan_pool_name:         HXV-FI_VlanPool
+          vlan_pool_type:         dynamic
+          vlan_list: 
+            - { name: 'hxv-cl3-storage-data', from: 1273, to: 1273 }
+            - { name: 'hxv-vm-network', from: 1521, to: 1521 }   
+            - { name: 'hxv-cl3-iscsi', from: 3013, to: 3013 }   
+          # Dependencies: none
+        tags: vlan_pool
+
+      - name: Create Attachable Access Entity Profile (AAEP)
+        include_tasks: 012_aci_create_aaep.yml
+        vars:
+          aaep_name:              "HXV-FI_AAEP"
+          aaep_description:       "HC-HXV"
+          infra_vlan_bool:        false
+          # Dependencies: none
+        tags: aaep
+        
+      - name: Create Layer 2 Domain to UCS FI
+        include_tasks: 013_aci_create_l2_domain.yml
+        vars:
+          domain_name:            HXV-FI_Domain 
+          domain_type:            l2dom
+          # Dependencies: none
+        tags: domain
+
+      - name: Bind Layer 2 Domain to VLAN pool
+        include_tasks: 014_aci_bind_domain_to_vlan_pool.yml
+        vars:
+          # Dependencies: 
+          domain_name:            HXV-FI_Domain 
+          domain_type:            l2dom          
+          vlan_pool_name:         HXV-FI_VlanPool
+          vlan_pool_type:         dynamic
+
+        tags: domain_to_pool
+    
+      - name: Bind AAEP to Layer 2 Domain 
+        include_tasks: 015_aci_bind_aaep_to_domain.yml
+        vars:
+          # Dependencies:
+          aaep_name:              HXV-FI_AAEP
+          domain_name:            HXV-FI_Domain 
+          domain_type:            l2dom
+        tags: aaep_to_domain
+
+  ############################################################################################
+  #    
+  # Fabric Access Policies: Switch/Interface configuration for Access Layer Connectivity
+  #
+  ############################################################################################
+
+        # VPC Explicit Protection Group, Interface Policies & Profiles 
+      - name: Create VPC Protection Group for the switch pair connecting to Cisco UCS FI and HyperFlex Std cluster
+        include_tasks: 016_aci_create_vpc_protection_group.yml
+        vars:
+          protection_group_name:  "vpc-explictGrp1103104"
+          protection_group_id:    12
+          #vpc_domain_policy:      ""
+          switch_1_id: 103
+          switch_2_id: 104
+          # Dependencies: none
+        tags: vpc_protection_group
+
+      - name: Create interface policies for the VPC to Cisco UCS FI and HyperFlex Std cluster
+        include_tasks: 017_aci_create_interface_policies.yml
+        vars: 
+          cdp_policy_name:            CDP_Enabled
+          link_level_policy_name:     40Gbps-Link
+          lldp_policy_name:           LLDP-Enabled
+          port_channel_policy_name:   LACP-Active
+          l2_interface_policy_name:   VLAN-Scope-Local
+          # Configured via GUI (can also use REST API)
+          stp_interface_policy_name:  BPDU-FG-Enabled
+          # Dependencies: aaep_name
+        tags: interface_policies
+      
+      - name: Create IPG for the VPC to Cisco UCS FI and HyperFlex Std cluster
+        include_tasks: 018_aci_create_vpc_interface_policy_group.yml
+        vars:
+          interface_policy_group_list: 
+            - HXV-FI-6300-A1_IPG
+            - HXV-FI-6300-B1_IPG
+          # Dependencies: 
+          cdp_policy_name:            CDP_Enabled
+          link_level_policy_name:     40Gbps-Link
+          lldp_policy_name:           LLDP-Enabled
+          port_channel_policy_name:   LACP-Active
+          l2_interface_policy_name:   VLAN-Scope-Local
+          # Configured via GUI (can also use REST API)
+          stp_interface_policy_name:  BPDU-FG-Enabled
+        tags: vpc_interface_policy_group
+
+      - name: Create Leaf IPR for the VPC to Cisco UCS FI and HyperFlex Std cluster
+        include_tasks: 019_aci_create_leaf_interface_profile.yml
+        vars:
+          interface_profile_name:         HXV-FI-6300-1_IPR
+          interface_profile_description:  HC-HXV
+          interface_policy_group_list: 
+            - HXV-FI-6300-A1_IPG
+            - HXV-FI-6300-B1_IPG
+          # Add logic to create name using port id
+          access_port_selector_list:
+            - { name: 'HXV-FI_p1_1', portblk: 'port_block_1', from_card: '1', to_card: '1', from_port: '1', to_port: '1', ipg: "{{ interface_policy_group_list[0] }}"}
+            - { name: 'HXV-FI_p1_2', portblk: 'port_block_2', from_card: '1', to_card: '1', from_port: '2', to_port: '2', ipg: "{{ interface_policy_group_list[1] }}"}
+          
+          leaf_profile: HXV-UCS_FI-Leaf_103-104_PR
+          leaf_selectors: HXV-UCS_FI-Leaf_103-104
+          # interface_selector_profile: HXV-FI-6300-1_IPR
+          
+
+          # Dependencies: 
+          # - HXV-UCS_FI-Leaf_103-104_PR
+        tags: leaf_interface_profile
+
+  
+ 

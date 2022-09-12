@@ -1,0 +1,7 @@
+---
+#[cisco_hx_fi:vars]
+ucsm_username: "admin"
+ucsm_password: "{{vault_ucsm_password}}"
+resource_groups: "default"
+
+

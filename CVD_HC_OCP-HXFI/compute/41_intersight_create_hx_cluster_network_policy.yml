@@ -1,0 +1,86 @@
+---
+
+- name: Define anchor for Intersight API login info 
+  set_fact:
+    intersight_api_login_info: &intersight_api_login_info
+      api_private_key: "{{ intersight_api_private_key }}"
+      api_key_id:      "{{ intersight_api_key_id }}"
+      api_uri:         "{{ intersight_api_uri | default(omit) }}"
+      validate_certs:  "{{ intersight_validate_certs | default(omit) }}"
+      #state:           "{{ intersight_state | default(omit) }}"
+
+- debug:
+    msg: "API Info is: {{ intersight_api_login_info }}"
+  tags: [never, debug]
+
+- name: Create HyperFlex Cluster Network Policy and return Moid
+  intersight_rest_api:
+    <<: *intersight_api_login_info
+    resource_path: /hyperflex/ClusterNetworkPolicies
+    query_params:
+      $filter: "Name eq '{{ hx_cluster_network_policy_name }}'"
+    api_body: {
+      "Organization": {
+        "Moid":                  "{{ organization_moid }}"
+      },
+      "Name":                    "{{ hx_cluster_network_policy_name }}",
+      "MgmtVlan": {
+        "Name":                  "{{ hx_mgmt_network_vlan_name }}",
+        "VlanId":                "{{ hx_mgmt_network_vlan_id }}"
+      },
+      "VmMigrationVlan":{
+        "Name":                  "{{ hx_vm_migration_vlan_name }}",
+        "VlanId":                "{{ hx_vm_migration_vlan_id }}"
+      },
+      "VmNetworkVlans":          "{{ hx_vm_network_vlan }}",
+      "KvmIpRange":{
+        "StartAddr":             "{{ hx_kvm_ip_start }}",
+        "EndAddr":               "{{ hx_kvm_ip_end}}",
+        "Gateway":               "{{ hx_kvm_gateway }}",
+        "Netmask":               "{{ hx_kvm_netmask }}"
+      },
+      "JumboFrame":              "{{ hx_jumbo_frames }}",
+      
+      # "MacPrefixRange":{
+      #   "StartAddr":"{{ hx_mac_start }}",
+      #   "EndAddr":"{{ hx_mac_end }}"
+      # },
+      # "UplinkSpeed": "default",
+ 
+      "ClusterProfiles": [
+        {
+        "Moid":                  "{{ hx_cluster_profile_moid }}"
+        }
+      ]
+    }
+    state: present
+  register: hx_cluster_network_policy_response
+  delegate_to: local_host
+  tags: 
+    - hx_cluster_network_policy
+    #- never
+
+- name: Query for an existing HyperFlex Cluster Network Policy and return Moid
+  intersight_rest_api:
+    <<: *intersight_api_login_info
+    resource_path: /hyperflex/ClusterNetworkPolicies
+    query_params:
+      $filter: "Name eq '{{ hx_cluster_network_policy_name }}'"
+    state: present
+  register: hx_cluster_network_policy_response
+  delegate_to: local_host
+  tags: 
+    - hx_cluster_network_policy
+    - never
+
+
+- name: Moid for HyperFlex Cluster Network Policy
+  set_fact:
+    hx_cluster_network_policy_moid: "{{ hx_cluster_network_policy_response.api_response.Moid }}"
+
+- debug:
+    msg: "Created HyperFlex Cluster Network Policy '{{ hx_cluster_network_policy_name }}' with Moid: '{{ hx_cluster_network_policy_moid }}'"  
+  #tags: [never, debug]
+
+
+

@@ -1,0 +1,152 @@
+---
+
+- name: Define anchor for ACI API login info
+  block:
+  - set_fact:
+      aci_api_login_info: &aci_api_login_info
+        hostname:         "{{ inventory_hostname }}"
+        username:         "{{ apic_username }}"
+        password:         "{{ apic_password }}"
+        use_proxy:        "{{ apic_use_proxy | default(false) }}"
+        use_ssl:          "{{ apic_use_ssl | default(true) }}"
+        validate_certs:   "{{ apic_validate_certs | default(false) }}"
+      
+      vlan_pool_name:     HXV-FI_VlanPool
+      vlan_pool_type:     dynamic
+      vlan_list: 
+            - { name: 'hxv-cl3-storage-data', from: 1273, to: 1273 }
+            - { name: 'hxv-vm-network', from: 1521, to: 1522 }   
+            - { name: 'hxv-cl3-iscsi', from: 3013, to: 3013 }    
+
+  - debug:
+      msg: "API Info is: {{ aci_api_login_info }}"
+    tags: [never, debug]
+
+
+# - name: Create VLAN Pools
+#   vars:
+#     vlan_pool_name: "HC-HXV-FI_VlanPool"
+#     vlan_pool_type: "static"
+#     vlan_id_from: "1271"
+#     vlan_id_to:   "1272"
+#   aci_rest:
+#     <<: *aci_api_login_info
+#     path: /api/node/mo/uni/infra/vlanns-[{{ vlan_pool_name }}]-{{ vlan_pool_type }}.json
+#     method: post
+#     content:
+#       fvnsVlanInstP:
+#         attributes:
+#           dn: uni/infra/vlanns-[{{ vlan_pool_name }}]-{{ vlan_pool_type }}
+#           #annotation:	orchestrator:ansible
+#           name: "{{ vlan_pool_name }}"
+#           descr: VLAN Pool for Hybrid Cloud HXV Std. cluster
+#           allocMode: "{{ vlan_pool_type }}"
+#           #ownerKey: ""
+#           #ownerTag: ""
+#         children:
+#         - fvnsEncapBlk:
+#             attributes:
+#               dn: uni/infra/vlanns-[{{ vlan_pool_name }}]-{{ vlan_pool_type }}/from-[vlan-{{ vlan_id_from }}]-to-[vlan-{{ vlan_id_to }}]
+#               annotation:	orchestrator:ansible
+#               name: ""
+#               descr: ""
+#               from: vlan-{{ vlan_id_from }}
+#               to: vlan-{{ vlan_id_to }}
+#     #state: present
+#   register: create_vlan_pool_response
+#   delegate_to: local_host
+#   tags: 
+#     - vlan_pool
+#     #- never
+
+
+
+
+- name: Create VLAN Pool
+  block:
+    - name: Create VLAN Pool
+      vars:
+      cisco.aci.aci_vlan_pool:
+        <<: *aci_api_login_info
+        pool: "{{ vlan_pool_name }}"
+        description: VLAN Pool for Hybrid Cloud HXV Std. cluster
+        annotation: orchestrator:ansible
+        pool_allocation_mode: "{{ vlan_pool_type }}"
+        owner_key: 
+        owner_tag:
+        state: present
+      register: create_vlan_pool_response
+      delegate_to: local_host
+      tags: 
+        - vlan_pool
+        #- never
+
+    - name: Save response from create vlan pool
+      set_fact:
+        vlan_pool_response: "{{ create_vlan_pool_response }}"
+
+    - debug:
+        msg: "Created VLAN Pool: {{ create_vlan_pool_response }}"  
+      #tags: [never, debug]
+
+
+- name: Query for VLAN IDs in a given VLAN Pool 
+  vars:
+  cisco.aci.aci_vlan_pool_encap_block:
+    <<: *aci_api_login_info
+    pool: "{{ vlan_pool_name }}"
+    pool_allocation_mode: "{{ vlan_pool_type }}"
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- debug:
+    msg: "VLAN Pool Query: {{ query_result}}"  
+  #tags: [never, debug]
+
+
+- name: Query all VLAN encap blocks
+  cisco.aci.aci_vlan_pool_encap_block:
+    <<: *aci_api_login_info
+    state: query
+  delegate_to: localhost
+  register: query_result
+
+- debug:
+    msg: "VLAN Pools Query: {{ query_result}}"  
+  #tags: [never, debug]
+  
+- name: Add VLANs to VLAN Pool
+  block:
+    - name: Add VLANs 
+      vars:
+      cisco.aci.aci_vlan_pool_encap_block:
+        <<: *aci_api_login_info
+        pool: "{{ vlan_pool_name }}"
+        pool_allocation_mode: "{{ vlan_pool_type }}"
+        description: "{{ item.name }}"
+        annotation: orchestrator:ansible 
+        block_name: 
+        block_start: "{{ item.from }}"
+        block_end: "{{ item.to }}"
+        state: present
+      with_items: "{{ vlan_list }}"
+      register: add_vlans_response
+      delegate_to: local_host
+      tags: 
+        - vlan_pool
+        #- never
+
+    - name: Save response from 'Add VLANs to VLAN Pool'
+      set_fact:
+        vlan_pool_response: "{{ add_vlans_response }}"
+
+    - debug:
+        msg: "VLANs added to VLAN Pool: {{ add_vlans_response }}"  
+      #tags: [never, debug]
+  # This module does not add VLANs that are delta from what is configured. 
+  # Add logic to check for overlapping vlans before executing the add
+  # blocks can be in a range too
+  # i.e. when: not overlapping
+
+

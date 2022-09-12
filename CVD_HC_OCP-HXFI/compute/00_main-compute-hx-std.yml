@@ -1,0 +1,135 @@
+---
+
+- name: API Login to UCSM and collect device claim info (for use by Intersight)
+  hosts: "{{ group | default('cisco_hx_fi') }}"
+  connection: local
+  # vars:
+  # vars_files:
+  #   - "./inventory/group_vars/cisco_hx_fi/vars"
+  #   - "./inventory/group_vars/cisco_hx_fi/vault"
+  #   - "./inventory/group_vars/cisco_intersight/vars"
+  #   - "./inventory/group_vars/cisco_intersight/vault"
+  tasks:
+    - name: Login into UCSM
+      include_tasks: 10_ucsm_api_login.yml
+      tags: [never]
+    - name: Get device connector status from UCSM
+      include_tasks: 11_ucsm_get_device_connector_status.yml
+      tags: [never]
+    - name: Enable device connector status on UCSM 
+      include_tasks: 12_ucsm_enable_device_connector.yml
+      tags: [never]
+    - name: Get device identifier from UCSM
+      include_tasks: 13_ucsm_get_device_identifier.yml
+      tags: [never]
+    - name: Get claim code from UCSM
+      include_tasks: 14_ucsm_get_claim_code.yml
+      tags: [never]
+    - name: Configure uplinks to datacenter fabric
+      vars: 
+        #
+        username: admin
+        password: H1ghV0lt
+        port_channel_list:
+          - name: "PC11-Switch_103"
+            pc_id: '11'
+            fabric_id: "A"
+            slot_id: '1'
+            port_id: '31'
+            admin_speed: "auto"
+          - name: "PC11-Switch_104"
+            pc_id: '11'
+            fabric_id: "A"
+            slot_id: '1'
+            port_id: '32'
+            admin_speed: "auto"
+          - name: "PC12-Switch_103"
+            pc_id: '12'
+            fabric_id: "B"
+            slot_id: '1'
+            port_id: '31'
+            admin_speed: "auto"
+          - name: "PC12-Switch_104"
+            pc_id: '12'
+            fabric_id: "B"
+            slot_id: '1'
+            port_id: '32'
+            admin_speed: "auto"
+      include_tasks: 17_ucsm_configure_uplinks.yml
+      #include_tasks: ucsm_configure_ucs_uplink_pc1.yml
+      tags: [never]
+
+- name: API Login to Intersight and Claim Device
+  hosts: "{{ group | default('cisco_intersight') }}"
+  connection: local
+  gather_facts: false
+  vars:
+    # intersight_api_login_info: 
+    #     intersight_api_private_key
+    #     intersight_api_key_id 
+    #     intersight_api_uri | default(omit) 
+    #     intersight_validate_certs | default(omit)
+  tasks:
+    - name: Claim UCSM FI as a target in Intersight
+      include_tasks: 15_intersight_claim_target.yml
+      tags: [never]
+
+    - name: Update HX-FI server inventory
+      include_tasks: 16_intersight_update_inventory_hx_std.yml
+      tags: [never]
+
+    - name: Pause 30s before starting Hyperflex configuration on Intersight
+      pause:
+        seconds: 30
+      tags: [never]    
+
+- name: Configure and deploy HyperFlex Standard Cluster from Intersight
+  hosts: "{{ group | default('cisco_intersight_hx_std') }}"
+  connection: local
+  gather_facts: false
+  vars:
+    # intersight_api_login_info: &intersight_api_login_info
+    #   private_key:    "{{ intersight_api_private_key }}"
+    #   key_id:         "{{ intersight_api_key_id }}"
+    #   uri:            "{{ intersight_api_uri | default(omit) }}"
+    #   validate_certs: "{{ intersight_validate_certs | default(omit) }}"
+    #   state:          "{{ intersight_state | default(omit) }}"
+    #
+    # Dependencies: 
+    #   - HyperFlex Cluster Profile Name (also HyperFlex Cluster Name)
+  tasks:
+    - name: Create HyperFlex Cluster Configuration (Profiles, Policies) for deployment - Standard Cluster
+      include_tasks: 01_intersight_create_hx_std_cluster_configuration.yml
+      vars:
+      #tags: [create_hx_std_cluster_configuration, never]
+    
+    - name: Assign Nodes to HyperFlex Cluster Profile for deployment - Standard Cluster
+      include_tasks: 02_intersight_assign_nodes_to_hx_std_cluster_profile.yml
+      vars:
+      #tags: [assign_nodes_to_hx_std_cluster,never]
+
+    - name: Prompt user for Deployment Action (Validate or Validate & Deploy)
+      block:
+
+        - name: Prompt for deployment action
+          pause:
+            prompt: "Select deplyoyment action. Would you like to [1] Validate Only or [2] Validate & Deploy? (1/2)"
+            echo: yes
+          register: prompt_action_response
+          run_once: true
+      
+        - name: 03_Validate HyperFlex Cluster Configuration for deployment - Standard Cluster
+          vars:
+          include_tasks: intersight_validate_hx_std_cluster_configuration.yml
+          when: prompt_action_response.user_input == '1'
+          tags: validate_hx_std_cluster
+      
+        - name: 04_Deploy HyperFlex Standard Cluster
+          vars:
+          include_tasks: intersight_deploy_hx_std_cluster.yml
+          when:
+            - prompt_action_response.user_input == '2'
+          # - validation_status is not Errored
+          tags: deploy_hx_std_cluster
+
+

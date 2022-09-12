@@ -1,0 +1,32 @@
+---
+
+- name: Configure uplinks
+  block: 
+    - name: configure uplinks 
+      uri:
+        url: "https://{{ inventory_hostname }}/nuova"
+        method: POST
+        headers:
+          Content-Type: application/json
+          ucsmcookie: "ucsm-cookie = {{ hostvars['DUMMY_HOST']['ucsm_cookie'] }}"
+        body:
+          <configConfMos>
+            <inConfigs>
+              <pair key="fabric/lan/A/pc-1">
+                  <fabricEthLanPc
+                  name="TEST"
+                  portId="1"
+                  dn="fabric/lan/A/pc-1"                
+                  </fabricEthLanPc>
+              </pair>
+            </inConfigs>
+          </configConfMos> 
+        body_format: json
+        return_content: yes
+        validate_certs: no
+      register: response
+      
+    - name: Output of device connector 
+      debug: "Device Connector response is: {{ response }}"
+
+    
