@@ -1,0 +1,68 @@
+---
+
+#-------------------------------------------------------------------------------------
+#  Create HyperFlex Cluster Software Policy
+#-------------------------------------------------------------------------------------
+
+- name: Define anchor for Intersight API login info 
+  set_fact:
+    intersight_api_login_info: &intersight_api_login_info
+      api_private_key:         "{{ intersight_api_private_key }}"
+      api_key_id:              "{{ intersight_api_key_id }}"
+      api_uri:                 "{{ intersight_api_uri | default(omit) }}"
+      validate_certs:          "{{ intersight_validate_certs | default(omit) }}"
+      state:                   "{{ intersight_state | default(omit) }}"
+  run_once: true
+
+- name: Create HyperFlex Software Version Policy and return Moid
+  intersight_rest_api:
+    <<: *intersight_api_login_info
+    resource_path: /hyperflex/SoftwareVersionPolicies
+    query_params:
+      $filter: "Name eq '{{ hx_software_policy_name }}'"
+    api_body: {
+      "Organization": {
+        "Moid":                 "{{ organization_moid }}"
+      },
+      "Name":                   "{{ hx_software_policy_name }}",
+      "HxdpVersion":            "{{ hx_hxdp_version }}",
+      "ServerFirmwareVersion":  "{{ hx_ucs_firmware_version }}",
+      "ClusterProfiles": [
+        {
+        "Moid":                  "{{ hx_cluster_profile_moid }}"
+        }
+      ]
+    }  
+    state: present
+  register: hx_software_policy_response
+  run_once: true
+  delegate_to: local_host
+  tags: 
+    - hx_software_policy
+    - never
+    #- never, debug, always
+
+- name: Query for an existing HyperFlex Software Version Policy and return Moid
+  intersight_rest_api:
+    <<: *intersight_api_login_info
+    resource_path: /hyperflex/SoftwareVersionPolicies
+    query_params:
+      $filter: "Name eq '{{ hx_software_policy_name }}'"
+    state: present
+  register: hx_software_policy_response
+  run_once: true
+  delegate_to: local_host
+  tags: 
+    - hx_software_policy
+
+
+- name: Moid for Software Version Policy
+  set_fact:
+    hx_software_policy_moid: "{{ hx_software_policy_response.api_response.Moid }}"
+  run_once: true
+
+- name: Print status of 'Create HyperFlex Cluster Software' policy
+  debug:
+    msg: "Created HyperFlex Software Version Policy '{{ hx_software_policy_name }}' with Moid: '{{ hx_software_policy_moid }}'"  
+  #tags: [never, debug, always]
+  #-----------------------------------------------------------------------------------------

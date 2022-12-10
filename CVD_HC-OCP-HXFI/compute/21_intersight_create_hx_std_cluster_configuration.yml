@@ -1,0 +1,276 @@
+---
+##########################################################################################
+#
+#  Create HyperFlex Standards cluster configure using profiles and policies 
+#
+##########################################################################################
+
+  #-------------------------------------------------------------------------------------   
+  # Pre-requisite configuration for HyperFlex cluster profile
+  #-------------------------------------------------------------------------------------
+
+    # Intersight Resource Groups
+    - name: Create new resource group in Intersight
+      include_tasks: 31_intersight_create_resource_group.yml
+      vars:
+        # resource_group_name:                    ""
+        # resource_group_description:             ""
+        #
+        # Dependencies: none
+        
+      tags: intersight_resource_group
+
+    # Intersight Organization
+    - name: Create new organization in Intersight
+      include_tasks: 32_intersight_create_organization.yml
+      vars:
+        # organization_name:                      ""
+        # organization_description:               ""
+        #
+        # Dependencies: 
+        #     - resource_group_moid
+      tags: intersight_organization
+  
+  #-------------------------------------------------------------------------------------
+  # HyperFlex Cluster Profile Configuration
+  #-------------------------------------------------------------------------------------
+
+    # HyperFlex Cluster Profile: Profile Name (also HyperFlex Cluster Name)
+    - name: Create HyperFlex Cluster Profile in Intersight
+      include_tasks: 33_intersight_create_hx_cluster_profile.yml
+      vars:
+        # hx_cluster_profile_name:                ""
+        # hx_mgmt_platform:                       ""
+        # hx_hypervisor_type:                     ""
+        # hx_cluster_mgmt_ip:                     ""
+        # hx_mgmt_mac_prefix:                     ""
+        # hx_replication_factor:                  ""
+        # hx_storage_data_vlan_name:              ""
+        # hx_storage_data_vlan_id:                ""
+        #
+        # Dependencies: 
+        #     - organization_moid
+      tags: intersight_hx_cluster_profile
+
+    # HyperFlex Cluster Profile: HyperFlex Software Version Policy
+    - name: Create HyperFlex Software Policy in Intersight
+      include_tasks: 34_intersight_create_hx_software_policy.yml
+      vars:
+        # hx_software_policy_name:                ""
+        # hx_hxdp_version:                        ""
+        # hx_server_firmware_version":            ""
+        #
+        # Dependencies: 
+        #     - organization_moid
+        #     - hx_cluster_profile_moid
+      tags: intersight_hx_software_policy 
+  
+   # Security - Local Credential Policy
+    - name: Create HyperFlex Local Credentials Policy in Intersight
+      include_tasks: 35_intersight_create_hx_local_credential_policy.yml
+      vars:
+        # hx_local_credential_policy_name:        ""
+        # hx_hypervisor_admin:                    ""
+        # vault_hx_hypervisor_factory_password:   ""
+        # vault_hx_hypervisor_password:           ""
+        # vault_hx_hxdp_root_password:            ""
+        #
+        # Dependencies:
+        #   - organization_moid
+        #   - hx_cluster_profile_moid
+      tags: intersight_hx_local_credential_policy
+
+   # DNS, NTP and Timezone - System Config Policy
+    - name: Create HyperFlex System Config Policy in Intersight
+      include_tasks: 36_intersight_create_hx_sys_config_policy.yml
+      vars:
+        # hx_sys_config_policy_name:              ""
+        # hx_sys_config_timezone:                 "" 
+        # hx_sys_config_dns_servers:              "" 
+        # hx_sys_config_ntp_servers:              "" 
+        # hx_sys_config_dns_domain:               "" 
+        #
+        # Dependencies:
+        #   - organization_moid
+        #   - hx_cluster_profile_moid
+      tags: intersight_hx_sys_config_policy
+
+   # vCenter (Optional Policy) - vCenter Config Policy
+    - name: Create HyperFlex vCenter Config Policy in Intersight
+      include_tasks: 37_intersight_create_hx_vcenter_config_policy.yml
+      vars:
+        # hx_vcenter_config_policy_name:          ""
+        # hx_vcenter_hostname:                    ""
+        # hx_vcenter_password:                    ""
+        # hx_vcenter_username:                    ""
+        # hx_vcenter_datacenter:                  ""
+        #
+        # Dependencies:
+        #   - organization_moid
+        #   - hx_cluster_profile_moid
+      tags: intersight_hx_vcenter_config_policy
+
+    # Storage Configuration (Optional Policy) - Cluster Storage Policy
+    - name: Create HyperFlex Cluster Storage Policy
+      include_tasks: 38_intersight_create_hx_cluster_storage_policy.yml
+      vars:
+        # hx_cluster_storage_policy_name:           ""
+        # hx_vdi_optimization:                      ""
+        # hx_disk_cleanup:                          ""
+        # hx_laz_autoconfig:                        ""
+        #       
+        # Dependencies:
+        #   - organization_moid
+        #   - hx_cluster_profile_moid
+      tags: intersight_hx_cluster_storage_policy
+
+   # Auto Support (Optional Policy) - Auto Support Policy
+    - name: (Optional) Create HyperFlex Auto Support Policy
+      include_tasks: 39_intersight_create_hx_auto_support_policy.yml
+      vars:
+        # hx_auto_support_policy_name:              ""
+        # hx_auto_support_enable:                   ""
+        # hx_auto_support_receipient:               ""
+        #       
+        # Dependencies:
+        #   - organization_moid
+        #   - hx_cluster_profile_moid
+      tags: intersight_hx_auto_support_policy
+    
+  # Node IP Ranges - Node Config Policy
+    - name: Create HyperFlex Node Config Policy
+      include_tasks: 40_intersight_create_hx_node_config_policy.yml
+      vars:
+        # hx_node_config_policy_name:               ""
+        # hx_mgmt_network_ip_start:                 ""
+        # hx_mgmt_network_ip_end:                   ""
+        # hx_mgmt_network_subnet_mask:              ""
+        # hx_mgmt_network_gateway:                  ""
+        # hx_mgmt_network_ctrlr_vm_ip_start:        ""
+        # hx_mgmt_network_ctrlr_vm_ip_end:          ""
+        # hx_hostname_prefix:                       ""
+        #   
+        # Dependencies:
+        #   - organization_moid
+        #   - hx_cluster_profile_moid
+      tags: intersight_hx_node_config_policy
+
+   # Cluster Network - Cluster Network Policy
+    - name: Create HyperFlex Cluster Network Policy
+      include_tasks: 41_intersight_create_hx_cluster_network_policy.yml
+      vars:
+        # hx_cluster_network_policy_name:           ""
+        # hx_mgmt_network_vlan_name:                ""    
+        # hx_mgmt_network_vlan_id:                  ""
+        # hx_vm_migration_vlan_name:                "" 
+        # hx_vm_migration_vlan_id:                  ""
+        # hx_vm_network_vlan_name:                  "" 
+        # hx_vm_network_vlan_id:                    "" 
+        # hx_kvm_ip_start:                          "" 
+        # hx_kvm_ip_end:                            "" 
+        # hx_kvm_gateway:                           "" 
+        # hx_kvm_netmask:                           "" 
+        # hx_jumbo_frames:                          "" 
+        #   
+        # Dependencies:
+        #   - organization_moid
+        #   - hx_cluster_profile_moid
+      tags: intersight_hx_cluster_network_policy
+
+   # Proxy Setting (Optional Policy)  - HTTP Proxy Policy
+    - name: Create HyperFlex HTTP Proxy Policy 
+      include_tasks: 42_intersight_create_hx_http_proxy_policy.yml
+      vars:
+        # hx_http_proxy_policy_name:                ""
+        # hx_http_proxy_hostname:                   ""
+        # hx_http_proxy_port:                       ""
+        # hx_http_proxy_username:                   ""
+        # hx_http_proxy_password:                   ""
+        #
+        # Dependencies:
+        #   - organization_moid
+        #   - hx_cluster_profile_moid
+      tags: intersight_hx_http_proxy_policy
+  
+   # HyperFlex Storage Network 
+      #  Defined earlier in the HyperFlex Cluster Policy (see above)
+ 
+  
+  #-------------------------------------------------------------------------------------
+  # Prompt for optional configuration policies
+  #-------------------------------------------------------------------------------------
+
+   # Enable External Fiber Channel (FC) and/or iSCSI storage
+    - name: (Optional) Configure external FC storage policy? 
+      pause:
+        prompt: Configure external FC storage policy? (yes/no) 
+        echo: yes
+      register: fc_prompt_response
+      run_once: true
+      #private: no
+      #confirm: yes
+    - name: (Optional) Configure external iSCSI storage policy? 
+      pause:
+        prompt: Configure external iSCSI storage policy? (yes/no) 
+        echo: yes
+      register: iscsi_prompt_response
+      run_once: true
+      #private: no
+      #confirm: yes
+    
+    - name: Save prompt response for configuring external FC storage
+      set_fact:
+        enable_fc_storage_policy: "{{ fc_prompt_response.user_input }}" 
+      run_once: true
+
+    - name: Save prompt response for configuring external iSCSI storage
+      set_fact:
+        enable_iscsi_storage_policy: "{{ iscsi_prompt_response.user_input }}"
+      run_once: true
+
+    - name: Print user responses to prompts for optional policies (External FC/iSCSI storage)
+      debug:
+        msg: "Prompt responses for enabling external FC/iSCSI storage: '{{ enable_fc_storage_policy }}' and iSCSI storage '{{ enable_iscsi_storage_policy }}'"  
+      tags: always
+
+  #-------------------------------------------------------------------------------------
+  # Enable External FC and iSCSI storage policies based on prompt response
+  #-------------------------------------------------------------------------------------
+
+    - name: (Optional Policy) Configure external FC storage when prompt_response is enabled 
+      include_tasks: 43_intersight_create_hx_external_fc_storage.yml
+      vars:
+        # hx_fc_storage_policy_name:              ""
+        hx_fc_storage_enable:                     "{{ enable_fc_storage_policy }}"
+        # hx_fc_storage_vsan_a_name:              ""
+        # hx_fc_storage_vsan_a_id:                ""
+        # hx_fc_storage_vsan_b_name:              ""
+        # hx_fc_storage_vsan_b_id:                ""
+        # hx_fc_storage_wwxn_range_start:         ""
+        # hx_fc_storage_wwxn_range_end:           ""   
+        #
+        # Dependencies:
+        #   - organization_moid
+        #   - hx_cluster_profile_moid
+      when: enable_fc_storage_policy
+      tags: intersight_hx_external_fc_storage_policy
+
+    - name: (Optional Policy) Configure external iSCSI storage when prompt_response is enabled
+      include_tasks: 44_intersight_create_hx_external_iscsi_storage.yml
+      vars:
+        # hx_iscsi_storage_policy_name:           ""
+        hx_iscsi_storage_enable:                  "{{ enable_iscsi_storage_policy }}"
+        # hx_iscsi_storage_vlan_a_name:           ""
+        # hx_iscsi_storage_vlan_a_id:             ""
+        # hx_iscsi_storage_vlan_b_name:           ""
+        # hx_iscsi_storage_vlan_b_id:             ""
+        #
+        # Dependencies:
+        #   - organization_moid
+        #   - hx_cluster_profile_moid
+    
+      when: enable_iscsi_storage_policy
+      tags: intersight_hx_external_iscsi_storage_policy
+  
+#-----------------------------------------------------------------------------------------
+  
