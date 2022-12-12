@@ -1,0 +1,64 @@
+---
+
+- name: API Login to Cisco APIC 
+  hosts: "{{ group | default('cisco_dc_fabric') }}"
+  connection: local
+  gather_facts: false
+  vars:
+    aci_api_login_info: &aci_api_login_info
+      hostname:         "{{ inventory_hostname }}"
+      username:         "{{ apic_username }}"
+      password:         "{{ apic_password }}"
+      use_proxy:        "{{ apic_use_proxy | default(false) }}"
+      validate_certs:   "{{ apic_validate_certs | default(false) }}"
+    Dependencies:
+      # None
+  tasks:
+    #  Access Layer Configuration for HXV Infrastructure using Fabric Access Policies: Pools, 
+    #  AAEP, Domain, Interface Policies and Profiles
+    - name: Task_01 - Configure access layer connectivity to HyperFlex infrastructure 
+      include_tasks: 01_aci_configure_access_layer_connectivity.yml
+      vars:
+      #tags: [aci_access_layer_configuraton,never]
+
+    # Tenant Configuration for HXV Infrastructure: Virtual Routing and Forwarding (VRF), 
+    # Bridge Domain (BD), Application Profile (AP), Application Endpoint Groups (EPG)
+    - name: Task_02 - Configure tenant policies and profiles to enable connectivity to/from HyperFlex VSI clusters
+      include_tasks: 02_aci_configure_infrastructure_tenant.yml
+      vars:
+        infra_hx_hc_cl3: 
+          - tenant:       { name: HXV-Foundation, description: HyperFlex Infrastructure Tenant For Hybrid Cloud }
+          - vrf:          { name: HXV-Foundation_VRF, description: HyperFlex Infrastructure VRF For Hybrid Cloud }
+          - bridge_domains: 
+              # - { name: HXV-IB-MGMT_BD, description: IB-MGMT for HC-CL3, 
+              #     gateway: 10.1.171.254, mask: 255.255.255.0, scope: shared, 
+              #     settings: { host_routing: true, unicast_routing: true } }
+              # - { name: HXV-vMotion_BD, description: vMotion for HC-CL3 }
+              - { name: HXV-CL3-StorData_BD, description: Storage Data for HC-CL3 }
+              - { name: HXV-CL3-iSCSI_BD, description: iSCSI for HX CSI on HC-CL3 }
+          - application_profiles:  
+              # - { name: HXV-IB-MGMT_AP, description: IB-MGMT for HC-CL3}
+              # - { name: HXV-vMotion_AP, description: vMotion for HC-CL3 }
+              # - { name: HXV-StorData_AP, description: Storage Data for HC-CL3 }      
+          - epgs: 
+              - { name: HXV-IB-MGMT_EPG, description: IB-MGMT for HC-CL3, bd: HXV-IB-MGMT_BD, ap: HXV-IB-MGMT_AP, 
+                  access: { encap: 1171, type: vpc, pod_id: 1, leafs: 103-104, 
+                            interface_1: HXV-FI-6300-A1_IPG, interface_2: HXV-FI-6300-B1_IPG } }
+              - { name: HXV-vMotion_EPG, description: vMotion for HC-CL3, bd: HXV-vMotion_BD, ap: HXV-vMotion_AP, 
+                  access: { encap: 1371, type: vpc, pod_id: 1, leafs: 103-104, 
+                            interface_1: HXV-FI-6300-A1_IPG, interface_2: HXV-FI-6300-B1_IPG } }
+              - { name: HXV-CL3-StorData_EPG, description: Storage Data for HC-CL3, bd: HXV-CL3-StorData_BD, ap: HXV-StorData_AP, 
+                  access: { encap: 1273, type: vpc, pod_id: 1, leafs: 103-104, 
+                            interface_1: HXV-FI-6300-A1_IPG, interface_2: HXV-FI-6300-B1_IPG } }
+              - { name: HXV-CL3-iSCSI_EPG, description: iSCSI for HX CSI on HC-CL3, bd: HXV-CL3-iSCSI_BD, ap: HXV-StorData_AP, 
+                  access: { encap: 3013, type: vpc, pod_id: 1, leafs: 103-104, 
+                            interface_1: HXV-FI-6300-A1_IPG, interface_2: HXV-FI-6300-B1_IPG } }
+          - interfaces:
+              - HXV-FI-6300-A1_IPG
+              - HXV-FI-6300-B1_IPG
+
+        # Domain
+        domain_name:            HXV-FI_Domain 
+        domain_type:            l2dom
+
+

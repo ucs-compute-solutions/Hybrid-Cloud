@@ -1,0 +1,142 @@
+---
+##########################################################################################
+#
+#     Main CVD playbook for compute related configuration and deployment
+#
+##########################################################################################
+
+
+# #-----------------------------------------------------------------------------------------
+# # Login to UCSM and collect device claim info (for use by Intersight)
+# #-----------------------------------------------------------------------------------------
+# - name: API Login to UCSM 
+#   hosts:        "{{ group | default('cisco_hx_fi') }}"
+#   connection:   local
+#   gather_facts: no
+#   vars:
+#   vars_files:
+#     # - "../inventory/group_vars/cisco_hx_fi/vars"
+#     # - "../inventory/group_vars/cisco_hx_fi/vault"
+#   tasks:
+#     - name: Login into UCSM
+#       include_tasks: 10_ucsm_api_login.yml
+#       #tags: [never, debug, always, ucsm_login]
+#       tags: ucsm_login
+
+#     - name: Get device connector status from UCSM
+#       include_tasks: 11_ucsm_get_device_connector_status.yml
+#       #tags: [never, debug, always, ucsm_device_connector_status]
+#       tags: ucsm_device_connector_status
+      
+#     - name: Enable device connector status on UCSM 
+#       include_tasks: 12_ucsm_enable_device_connector.yml
+#       #tags: [never, debug, always, ucsm_enable_device_connector]
+#       tags: ucsm_enable_device_connector
+
+#     - name: Get device identifier from UCSM
+#       include_tasks: 13_ucsm_get_device_identifier.yml
+#       #tags: [never, debug, always, ucsm_device_identifier]
+#       tags: ucsm_device_identifier
+
+#     - name: Get claim code from UCSM
+#       include_tasks: 14_ucsm_get_claim_code.yml
+#       #tags: [never, debug, always, ucsm_claim_code]
+#       tags: ucsm_claim_code
+
+
+# #-----------------------------------------------------------------------------------------
+# # Login to Intersight and claim UCS Fabric Interconnects(FIs) in Intersight
+# # Discover FI-attached HyperFlex servers and dynamically update inventory file 
+# #-----------------------------------------------------------------------------------------
+# - name: API Login to Intersight, claim device and update inventory
+#   hosts:        "{{ group | default('cisco_intersight') }}"
+#   connection:   local
+#   gather_facts: no
+#   vars:
+#   vars_files:
+#     # - "../inventory/group_vars/cisco_intersight/vars"
+#     # - "../inventory/group_vars/cisco_intersight/vault"
+#   tasks:
+#     - name: Claim UCS Fabric Interconnects as a target in Intersight
+#       include_tasks: 15_intersight_claim_target.yml
+#       #tags: [never, debug, always, intersight_claim_target]
+#       tags: intersight_claim_target
+
+#     - name: Dynamically update inventory file with a list of HyperFlex servers
+#       include_tasks: 16_intersight_update_inventory_hx_std.yml
+#       #tags: [never, debug, always, intersight_dynamic_inventory_update]
+#       tags: intersight_dynamic_inventory_update
+
+
+# #-----------------------------------------------------------------------------------------
+# # Login to UCSM and configure uplinks to upstream data center network/fabric
+# #-----------------------------------------------------------------------------------------
+# - name: Configure uplinks on the UCSM FI to data center fabric
+#   hosts:        "{{ group | default('cisco_hx_fi') }}"
+#   connection:   local
+#   gather_facts: no
+#   vars:
+#   vars_files:
+#     # - "../inventory/group_vars/cisco_hx_fi/vars"
+#     # - "../inventory/group_vars/cisco_hx_fi/vault"
+#   tasks:
+#     - name: Configure uplinks to datacenter fabric
+#       include_tasks: 17_ucsm_configure_uplink_pc.yml
+#       #tags: [never, debug, always, ucsm_configure_uplink_pc]
+#       tags: ucsm_configure_uplink_pc
+
+#     - name: Pause 30s before starting Hyperflex configuration on Intersight
+#       pause:
+#         seconds: 30
+#       tags: [never, debug, always]
+
+
+#-----------------------------------------------------------------------------------------
+# Login to Intersight, configure pre-requisites (e.g. Organization, Resource Groups), 
+# provision HyperFlex cluster configuration profile, assign HyperFlex servers/nodes
+# to cluster, and [1] validate or [2] validate & deploy based on user response 
+#-----------------------------------------------------------------------------------------
+- name: Configure, validate and deploy a HyperFlex Standard Cluster from Intersight
+  hosts:        "{{ group | default('cisco_intersight_hx_std_servers') }}"
+  connection:   local
+  gather_facts: no
+  vars:
+  vars_files:
+    # - "../inventory/group_vars/cisco_intersight/vars"
+    # - "../inventory/group_vars/cisco_intersight/vault"
+    # - "../inventory/group_vars/cisco_intersight_hx_std/vars"
+    # - "../inventory/group_vars/cisco_intersight_hx_std/vault"
+  tasks:
+    - name: Create HyperFlex Cluster Configuration (Profiles, Policies) for deployment - Standard Cluster
+      include_tasks: 21_intersight_create_hx_std_cluster_configuration.yml
+      #tags: [never, debug, always, create_hx_std_cluster_configuration]
+      tags: create_hx_std_cluster_configuration
+    
+    - name: Assign Nodes to HyperFlex Cluster Profile for deployment - Standard Cluster
+      include_tasks: 22_intersight_assign_nodes_to_hx_std_cluster_profile.yml
+      #tags: [never, debug, always, assign_nodes_to_hx_std_cluster]
+      tags: assign_nodes_to_hx_std_cluster
+
+    - name: Prompt user for Deployment Action (Validate or Validate & Deploy)
+      block:
+        - name: Prompt for deployment action
+          pause:
+            prompt: "Select deplyoyment action. Would you like to [1] Validate Only or [2] Validate & Deploy? (1/2)"
+            echo: yes
+          register: prompt_action_response
+          run_once: true
+      
+        - name: Validate HyperFlex Cluster Configuration for deployment - Standard Cluster
+          include_tasks: 23_intersight_validate_hx_std_cluster_configuration.yml
+          when: prompt_action_response.user_input == '1'
+          #tags: [never, debug, always, validate_hx_std_cluster]
+          tags: validate_hx_std_cluster
+      
+        - name: Deploy HyperFlex Standard Cluster
+          include_tasks: 24_intersight_deploy_hx_std_cluster.yml
+          when:
+            - prompt_action_response.user_input == '2'
+          #tags: [never, debug, always, deploy_hx_std_cluster]
+          tags: deploy_hx_std_cluster
+
+#-----------------------------------------------------------------------------------------

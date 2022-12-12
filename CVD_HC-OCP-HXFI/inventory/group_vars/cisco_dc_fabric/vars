@@ -1,0 +1,20 @@
+---
+# Note:
+#      - Sensitive Data is saved in Ansible Vault. These variables will have a name that starts with 'vault_'
+#      - Script automates Day-2 configuration of an ACI fabric for deploying a HyperFlex cluster with Red Hat OCP
+
+# Authentication Information is saved in Ansible Vault
+apic_username: "admin"
+apic_password: "{{vault_apic_password}}"
+
+# Parameters for access layer connectivity to Cisco UCS Fabric Interconnects and Cisco HyperFlex servers   
+# 
+# VLAN Pools, Domain Name, AAEP
+
+#
+vpc_explicit_grp_name:              "HC_RG"
+
+# If using Cisco FIs
+fi_a_ipg:                           "Hybrid Cloud Resource Group"
+fi_b_ipg:                           ""
+

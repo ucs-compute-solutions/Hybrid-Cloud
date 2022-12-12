@@ -1,0 +1,2 @@
+#[cisco_dc_fabric]:vars]
+vault_apic_password: "H1ghV0lt"

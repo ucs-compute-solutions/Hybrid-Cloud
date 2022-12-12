@@ -1,0 +1,103 @@
+---
+
+- name: Enable Device Connector on UCSM if it is not enabled already
+  block: 
+    - name: Enable device connector 
+      uri:
+        url: "https://{{ inventory_hostname }}/
+        method: PUT
+        headers:
+          Content-Type: application/json
+          ucsmcookie: "ucsm-cookie={{ hostvars['DUMMY_HOST']['ucsm_cookie'] }}"
+        body: "{
+        <configConfMos
+        cookie="1658412906/36398062-c29d-43dc-b8fe-ee7ea49aa251"
+        inHierarchical="false">
+            <inConfigs>
+        <pair key="fabric/lan/A/pc-99">
+            <fabricEthLanPc
+            name="PC_to_103-104"
+            portId="99"
+            dn="fabric/lan/A/pc-99"
+            
+            status="created"
+            
+            sacl="addchild,del,mod">
+                <fabricEthLanPcEp
+                adminState="enabled"
+                autoNegotiate="yes"
+                ethLinkProfileName="default"
+                name=""
+                portId="31"
+                slotId="1"
+                usrLbl=""
+                
+                rn="ep-slot-1-port-31"
+                
+                
+                sacl="addchild,del,mod">
+                </fabricEthLanPcEp>
+                <fabricEthLanPcEp
+                adminState="enabled"
+                autoNegotiate="yes"
+                ethLinkProfileName="default"
+                name=""
+                portId="32"
+                slotId="1"
+                usrLbl=""
+                
+                rn="ep-slot-1-port-32"
+                
+                
+                sacl="addchild,del,mod">
+                </fabricEthLanPcEp>
+            </fabricEthLanPc>
+        </pair>
+            </inConfigs>
+        </configConfMos>
+        }"
+        status_code: 200
+        return_content: yes
+        validate_certs: no
+      register: response
+      
+    - name: Output of device connector 
+      debug: "Device Connector response is: {{ response.json[0] }}"
+
+    - name: Pause for Device Connector to enable
+      pause:
+        seconds: 30
+
+  when: device_connector_status != "Claimed"
+    
+  ---
+# Setup UCS uplink Ports
+  - name: Configure UCS Uplink Ports for HC-HXV
+    block:
+      - name: Configure 
+    ucs_managed_objects:
+      hostname: "{{ inventory_hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      objects:
+        - {
+            # Configure the port as uplink port
+            "module": "ucsmsdk.mometa.fabric.FabricEthLan",
+            "class": "FabricEthLan",
+            "properties": {
+              "parent_mo_or_dn": "fabric/lan",
+              "id": "{{ item.fabric_id }}"
+            },
+            "children": [
+              {
+                "module": "ucsmsdk.mometa.fabric.FabricEthLanEp",
+                "class": "FabricEthLanEp",
+                "properties": {
+                  "port_id": "{{ item.port_id }}",
+                  "slot_id": "{{ item.slot_id }}",
+                  "admin_state": "enabled",
+                  "auto_negotiate": "yes"
+                }
+              }
+            ]
+          }

@@ -1,0 +1,136 @@
+---
+# Note:
+#      - Sensitive Data is saved in Ansible Vault. These variables will have a name that starts with 'vault_'
+#      - Software versions shown here reflects the initial version used during deployment and may have been upgraded subsequently
+
+# Parameters for creating an Intersight Resource
+#
+resource_group_name:              "HC_RG"
+resource_group_description:       "Hybrid Cloud Resource Group"
+
+# Parameters for creating an Intersight Organization
+#
+organization_name:                "HC_ORG"
+organization_description:         "Hybrid Cloud Organization"
+
+# Parameters for creating a HyperFlex Cluster Profile - Standard Cluster
+#
+hx_cluster_profile_name:          "HC-CL3"
+hx_cluster_profile_description:   "Hybrid Cloud CVD with Redhat OCP and Cisco HyperFlex"
+hx_mgmt_platform:                 "FI"
+hx_hypervisor_type:               "ESXi"
+
+hx_cluster_mgmt_ip:               "10.1.171.110"
+hx_mac_prefix:                    "00:25:B5:03"
+hx_wwxn_prefix:                   "20:00:00:25:B5:03"
+hx_replication_factor:            3
+hx_hostname_prefix:               "hc-cl3"
+
+hx_storage_data_vlan_name:        "hxv-cl3-storage-data"
+hx_storage_data_vlan_id:          1273
+
+
+# Parameters for creating a HyperFlex Software Version Policy for Standard Cluster
+#
+hx_software_policy_name:          "{{ hx_cluster_profile_name }}-software-version_policy"
+hx_hxdp_version:                  5.0(1c)
+hx_ucs_firmware_version:          4.2(1i)
+
+# Parameters for creating a HyperFlex Local Credential Policy for a Standard Cluster
+#
+hx_local_credential_policy_name:  "{{ hx_cluster_profile_name }}-local-credential_policy"
+hx_hypervisor_admin:              "root"
+hx_hypervisor_factory_password:   true 
+hx_hypervisor_password:           "{{ vault_hx_hypervisor_password }}"
+hx_hxdp_root_password:            "{{ vault_hx_hxdp_root_password }}"
+
+# Parameters for creating a HyperFlex System Config Policy for a Standard Cluster
+#
+hx_sys_config_policy_name:        "{{ hx_cluster_profile_name }}-sys-config_policy"
+hx_sys_config_timezone:           "America/New_York" 
+hx_sys_config_dns_servers:        ['10.10.171.240'] 
+hx_sys_config_ntp_servers:        ['192.168.171.254'] 
+hx_sys_config_dns_domain:         "hc.com" 
+
+# Parameters for creating a HyperFlex vCenter Config Policy for a Standard Cluster
+#
+hx_vcenter_config_policy_name:    "{{ hx_cluster_profile_name }}-vcenter-config_policy"
+hx_vcenter_hostname:              "vc1-1.hc.com"
+hx_vcenter_password:              "{{ vault_hx_vcenter_password }}"
+hx_vcenter_username:              "administrator@vsphere.local"
+hx_vcenter_datacenter:            "HC-App-Site1"
+
+# Parameters for creating a HyperFlex Cluster Storage Policy for a Standard Cluster
+#
+hx_cluster_storage_policy_name:   "{{ hx_cluster_profile_name }}-cluster-storage_policy"
+hx_vdi_optimization:              false
+hx_disk_cleanup:                  true
+hx_laz_autoconfig:                false
+
+# Parameters for creating a HyperFlex Auto Support Policy for a Standard Cluster
+#
+hx_auto_support_policy_name:      "{{ hx_cluster_profile_name }}-auto-support_policy"
+hx_auto_support_enable:           true
+hx_auto_support_recipient:        "hc-admin@cisco.com"
+
+# Parameters for creating a HyperFlex Cluster Network Policy for a Standard Cluster
+#
+hx_cluster_network_policy_name:   "{{ hx_cluster_profile_name }}-cluster-network_policy"
+hx_mgmt_network_vlan_name:        hxv-inband-mgmt
+hx_mgmt_network_vlan_id:          1171
+hx_vm_migration_vlan_name:        hxv-vmotion
+hx_vm_migration_vlan_id:          1371
+hx_vm_network_vlan:
+  - {"Name": "hxv-vm-network-1521", "VlanId": 1521}
+hx_kvm_ip_start:                  192.168.171.111
+hx_kvm_ip_end:                    192.168.171.114
+hx_kvm_gateway:                   192.168.171.254
+hx_kvm_netmask:                   255.255.255.0
+hx_jumbo_frames:                  true
+
+# Parameters for creating a HyperFlex Nodes Config Policy for a Standard Cluster
+#
+hx_node_config_policy_name:       "{{ hx_cluster_profile_name }}-node-config_policy"
+hx_mgmt_network_ip_start:          10.1.171.111
+hx_mgmt_network_ip_end:            10.1.171.114     
+hx_mgmt_network_subnet_mask:       255.255.255.0 
+hx_mgmt_network_gateway:           10.1.171.254
+hx_mgmt_network_ctrlr_vm_ip_start: 10.1.171.161 
+hx_mgmt_network_ctrlr_vm_ip_end:   10.1.171.164
+
+
+# Parameters for creating a HyperFlex HTTP Proxy Policy for a Standard Cluster
+#
+hx_http_proxy_policy_name:        "{{ hx_cluster_profile_name }}-http-proxy_policy"
+hx_http_proxy_hostname:           "proxy-wsa.esl.cisco.com"
+hx_http_proxy_port:               80
+hx_http_proxy_username:           "admin"
+hx_http_proxy_password:           "{{ vault_hx_http_proxy_password }}"
+
+# Parameters for creating a HyperFlex External FC storage Policy for a Standard Cluster
+#
+hx_fc_storage_policy_name:              "{{ hx_cluster_profile_name }}-fc-storage_policy"
+# hx_fc_storage_enable:                 Ansible runtime variable based on prompt response
+hx_fc_storage_vsan_a_name:              "VSAN-30"
+hx_fc_storage_vsan_a_id:                3030
+hx_fc_storage_vsan_b_name:              "VSAN-40"
+hx_fc_storage_vsan_b_id:                3040
+hx_fc_storage_wwxn_range_start:         "20:00:00:25:B5:03"
+hx_fc_storage_wwxn_range_end:           "20:00:00:25:B5:03"   
+
+# Parameters for creating a HyperFlex External FC storage Policy for a Standard Cluster
+#
+hx_iscsi_storage_policy_name:           "{{ hx_cluster_profile_name }}-iscsi-storage_policy"
+# hx_iscsi_storage_enable:              Ansible runtime variable based on prompt response
+hx_iscsi_storage_vlan_a_name:           "hxv-iscsi-vlan-a"
+hx_iscsi_storage_vlan_a_id:             3013
+hx_iscsi_storage_vlan_b_name:           "hxv-iscsi-vlan-b"
+hx_iscsi_storage_vlan_b_id:             3023
+
+hx_std_servers:
+  - AA06-6332-FI-1 
+  - AA06-6332-FI-3 
+  - AA06-6332-FI-2 
+  - AA06-6332-FI-4 
+
+hx_node_profile_prefix:                 "{{ hx_hostname_prefix }}"

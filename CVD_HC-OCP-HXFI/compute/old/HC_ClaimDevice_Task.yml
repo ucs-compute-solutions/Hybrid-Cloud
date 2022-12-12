@@ -1,0 +1,18 @@
+- name: Define JSON string passed to claim script
+  set_fact:
+    # JSON for each host being claimed.
+    # Quotes and whitespace are importantant for the JSON string passed to claim script.
+    # ----------
+    stash_json: ' { "hostname": "{{ target_hostname }}",
+      "username": "{{ target_username }}",
+      "password": "{{ target_password }}",
+      "device_type": "{{ platform_type }}",
+      "proxy_host": "{{ target_proxy_host }}",
+      "proxy_port": "{{ target_proxy_port }}",
+      "read_only": "{{ target_read_only }}",
+      "resource_groups": ["{{ target_resource_groups }}"]
+      }'
+- name: Claim targets
+  script: /usr/bin/env python ../intersight-python-utils/config_targets/claim_target.py -t ' [{{ stash_json }}]'
+  register: result
+  changed_when: '"true" in result.stdout'

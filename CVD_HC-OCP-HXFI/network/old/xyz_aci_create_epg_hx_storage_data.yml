@@ -1,0 +1,26 @@
+---
+
+# Variables
+tenant: "Tenant_Ansible"
+vrf: "VRF_Ansible"
+bridge_domains:
+  - bd: "BD_Ansible"
+    gateway: "10.16.100.1"
+    mask: "24"
+    scope: "shared"
+ap: "AP_Ansible"
+epgs:
+  - epg: "EPG_Ansible"
+    bd: "BD_Ansible"
+
+
+- name: Task 06 - Create EPG's and add to the Application Profile
+  aci_epg:
+    <<: *aci_login
+    tenant: '{{ tenant }}' 
+    ap: '{{ ap }}'
+    epg: '{{ item.epg }}'
+    bd: '{{ item.bd }}'  
+    preferred_group: yes
+    state: present
+  with_items: "{{ epgs }}"

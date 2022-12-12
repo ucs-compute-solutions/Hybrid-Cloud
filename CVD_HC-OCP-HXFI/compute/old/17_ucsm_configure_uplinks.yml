@@ -1,0 +1,59 @@
+---
+
+# - name: Configure uplinks
+#   block: 
+#     - name: configure uplinks 
+#       uri:
+#         url: "https://{{ inventory_hostname }}/nuova"
+#         method: PUT
+#         headers:
+#           Content-Type: application/json
+#           ucsmcookie: "ucsm-cookie = {{ hostvars['DUMMY_HOST']['ucsm_cookie'] }}"
+#         body: {
+#           <fabricEthLanPc 
+#             adminSpeed="40gbps", 
+#             adminState="enabled", 
+#             name="PC99-Switch_103-104",  
+#             portId="99",
+#             switchId="A" > 
+#           </fabricEthLanPc>
+#         }
+#         body_format: json
+#         return_content: yes
+#         validate_certs: no
+#       register: response
+      
+#     - name: Response from "Configure Uplinks"
+#       debug: "Device Connector response is: {{ response }}"
+
+# ORIGINAL
+- name: Configure uplinks
+  block: 
+    - name: configure uplinks 
+      uri:
+        url: "https://{{ inventory_hostname }}/nuova"
+        method: POST
+        headers:
+          Content-Type: application/json
+          ucsmcookie: "ucsm-cookie = {{ hostvars['DUMMY_HOST']['ucsm_cookie'] }}"
+        body: {
+         #<configConfMos>
+            #<inConfigs>
+              #<pair key="fabric/lan/A/pc-1">
+                  <fabricEthLanPc
+                  name="TEST"     
+                  "switchId"="A">
+                  
+              #</pair>
+            #</inConfigs>
+          #</configConfMos> 
+          }
+        body_format: json
+        return_content: yes
+        validate_certs: no
+      register: response
+      
+    - name: Output of device connector 
+      debug: "Device Connector response is: {{ response }}"
+
+    
