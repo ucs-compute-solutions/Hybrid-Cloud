@@ -3,9 +3,7 @@
 This repo provides the Ansible Automation for the above Cisco Validated Design. The design and deployment guide for this CVD is available at: https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/UCS_CVDs/hx_rh_ocp_hybrid_cloud.html
 The Ansible playbooks provided here will automate the on-prem compute, network and virtualization layer infrastructure in the solution. 
 
-![image](https://www.cisco.com/c/dam/en/us/td/docs/unified_computing/ucs/UCS_CVDs/hx_rh_ocp_hybrid_cloud.docx/_jcr_content/renditions/hx_rh_ocp_hybrid_cloud_39.png)
-
-![ScreenShot](image.png)
+![alt text](files/automation_topology.webp)
 
 The playbooks, inventory files and variables for the above infrastructure is located in the following files and directories:
 
