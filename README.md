@@ -1,6 +1,13 @@
 # Cisco Hybrid Cloud CVD - Cisco HyperFlex and Red Hat OpenShift Container Platform (OCP)
 
-This repo provides the Ansible Automation for the above Cisco Validated Design. The design and deployment guide for this CVD is available at: https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/UCS_CVDs/hx_rh_ocp_hybrid_cloud.html
+This repo provides the Ansible Automation for the above Cisco Validated Design. 
+
+The figure below shows the end-to-end topology for the solution:
+
+![alt text](files/solution_topology.png)
+
+The design and deployment guide for this CVD is available at: https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/UCS_CVDs/hx_rh_ocp_hybrid_cloud.html
+
 The Ansible playbooks provided here will automate the on-prem compute, network and virtualization layer infrastructure in the solution. 
 
 ![alt text](files/Automation_topology.png)
