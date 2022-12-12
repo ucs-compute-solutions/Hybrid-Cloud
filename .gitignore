@@ -1,3 +1,14 @@
+# Mine
+CVD_HC-OCP-HXFI/compute/old/
+CVD_HC-OCP-HXFI/compute/old/*
+CVD_HC-OCP-HXFI/network/old/
+CVD_HC-OCP-HXFI/network/old*
+
+*vault*
+*ansible*
+*python*
+*venv*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
