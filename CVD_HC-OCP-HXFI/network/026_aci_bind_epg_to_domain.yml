@@ -1,0 +1,38 @@
+---
+
+- name: Define anchor for ACI API login info
+  block:
+    - set_fact:
+        aci_api_login_info: &aci_api_login_info
+          hostname:             "{{ inventory_hostname }}"
+          username:             "{{ apic_username }}"
+          password:             "{{ apic_password }}"
+          use_proxy:            "{{ apic_use_proxy | default(false) }}"
+          use_ssl:              "{{ apic_use_ssl | default(true) }}"
+          validate_certs:       "{{ apic_validate_certs | default(false) }}"
+
+
+    - debug:
+        msg: "API Info is: {{ aci_api_login_info }}"
+      tags: [never, debug]
+
+    - debug:
+        msg: "Debug Info is: {{ infra_hx_hc_cl3[4] }}"
+
+
+- name: Bind EPG to Domain
+  cisco.aci.aci_epg_to_domain:
+    <<: *aci_api_login_info
+    annotation: orchestrator:ansible
+    tenant:        "{{ infra_hx_hc_cl3[0].tenant.name }}"
+    ap:            "{{ item.ap }}"
+    epg:           "{{ item.name }}"
+    domain:        "{{ domain_name }}"
+    domain_type:   "{{ domain_type }}"
+    state: present
+  with_list: "{{ infra_hx_hc_cl3[4].epgs}}"
+  when: item.name is defined
+  delegate_to: localhost
+  tags: infra_epgs_to_domain
+
+

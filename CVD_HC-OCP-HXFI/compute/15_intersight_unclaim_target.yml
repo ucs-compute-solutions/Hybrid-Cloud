@@ -1,0 +1,32 @@
+---
+
+#-------------------------------------------------------------------------------------
+#  Unclaim UCSM/UCS FIs in Intersight
+#-------------------------------------------------------------------------------------
+
+- name: Define anchor for Intersight API login info 
+  set_fact:
+    intersight_api_login_info: &intersight_api_login_info
+      api_private_key:          "{{ intersight_api_private_key }}"
+      api_key_id:               "{{ intersight_api_key_id }}"
+      api_uri:                  "{{ intersight_api_uri | default(omit) }}"
+      validate_certs:           "{{ intersight_validate_certs | default(omit) }}"
+      state:                    "{{ intersight_state | default(omit) }}"
+
+- name: Delete a Target (unclaim)
+  cisco.intersight.intersight_target_claim:
+    <<: *intersight_api_login_info
+    device_id: "{{ ucsm_device_id }}"
+    state:      absent
+  tags: Ansible
+  when: hostvars['DUMMY_HOST']['ucsm_device_connector_status'] != "Claimed"
+  
+  # ---other potential options---
+  #when: hostvars['DUMMY_HOST']['account_ownership_state'] != "Claimed"
+  #when: ansible_facts['account_ownership_state'] != 'Claimed'
+
+#-------------------------------------------------------------------------------------
+
+
+
+

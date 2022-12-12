@@ -1,0 +1,96 @@
+---
+
+#-------------------------------------------------------------------------------------
+# Login to UCSM and save cookie for subsequent configuration and interaction via API
+#-------------------------------------------------------------------------------------
+
+- name: Define anchor for UCSM API login info 
+  ansible.builtin.set_fact:
+    ucsm_api_login_info: &ucsm_api_login_info
+      hostname:   "{{ inventory_hostname }}"
+      username:   "{{ ucsm_username | default('admin') }}"
+      password:   "{{ ucsm_password | default('cisco123') }}"
+      state:      "{{ ucsm_state | default(omit) }}"
+
+- name: Print UCSM API Login Info
+  debug:
+    msg: "UCSM API Login Info: {{ucsm_api_login_info}}"
+  #tags: [never, debug, always]
+  tags: never
+
+#-------------------------------------------------------------------------------------
+- name: API Login to UCSM
+  block:
+    - name: Login into UCSM
+      vars: 
+      ansible.builtin.uri:
+        url: "https://{{ hostname }}/nuova"
+        method: POST
+        headers: 
+          Content-Type: application/x-www-form-urlencoded
+        body: <aaaLogin inName='{{username}}' inPassword='{{password}}'></aaaLogin>
+        body_format: form-urlencoded
+        status_code: 200
+        return_content: yes
+        timeout: 60
+        validate_certs: no
+      register: login_response
+      tags: ucsm_login 
+
+    - name: Print UCSM Login Response - Info
+      debug:
+        msg: "UCSM Login Response is: {{ login_response.content }}"
+      #tags: [never, debug, always, ucsm_login]
+      tags: always
+    - name: Print UCSM Login Response - Type
+      debug:
+        msg: "UCSM Login Response is of type: {{ login_response.content | type_debug }}"
+      #tags: [never, debug, always, ucsm_login]
+      tags: never
+
+  
+    # pip install lxml required for the following 
+    - name: Get cookie from xml response
+      ansible.builtin.xml:
+        xmlstring: "{{ login_response.content }}"
+        content: "attribute"
+        xpath: /aaaLogin
+      register: xmlattribute
+      tags: ucsm_login
+
+    - name: Print UCSM Login Response - XML attribute value
+      debug:
+        var: xmlattribute.matches[0].aaaLogin.outCookie
+        #msg: "UCSM Login Cookie is: {{xmlattribute.matches[0].aaaLogin.outCookie}}"
+      #tags: [never, debug, always, ucsm_login]
+      tags: never
+
+
+    - name: Set UCSM Login cookie variable
+      ansible.builtin.set_fact:
+        cookie_fact: "{{ xmlattribute.matches[0].aaaLogin.outCookie | string }}"
+      tags: ucsm_login
+
+    - name: Print UCSM Login Response - Cookie 
+      debug:
+        msg: "Data type for UCSM cookie variable is: {{ cookie_fact }}"
+        #msg: "Data type for UCSM cookie variable is: {{ cookie_fact | type_debug }}"
+      tags: never
+
+
+    - name: Register dummy host with UCSM cookie variable
+      ansible.builtin.add_host:
+        name: "DUMMY_HOST"
+        ucsm_cookie: "{{cookie_fact}}"
+      tags: ucsm_login
+
+    - name: Print UCSM Login Response - Dummy Host Variable
+      debug:
+        msg: "Data type for UCSM cookie variable is: {{ ucsm_cookie }}"
+        #msg: "Data type for UCSM cookie variable is: {{ ucsm_cookie | type_debug }}"
+      tags: never
+  
+  vars:
+   <<: *ucsm_api_login_info
+#-------------------------------------------------------------------------------------
+    
