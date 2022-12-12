@@ -5,6 +5,8 @@ The Ansible playbooks provided here will automate the on-prem compute, network a
 
 ![image](https://www.cisco.com/c/dam/en/us/td/docs/unified_computing/ucs/UCS_CVDs/hx_rh_ocp_hybrid_cloud.docx/_jcr_content/renditions/hx_rh_ocp_hybrid_cloud_39.png)
 
+![ScreenShot](image.png)
+
 The playbooks, inventory files and variables for the above infrastructure is located in the following files and directories:
 
 * HyperFlex VSI Playbooks:  CVD_HC-OCP-HXFI/compute
