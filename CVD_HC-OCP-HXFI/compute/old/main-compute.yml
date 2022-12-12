@@ -1,0 +1,110 @@
+---
+
+- name: API Login to UCSM and collect device claim info (for use by Intersight)
+  hosts: "{{ group | default('cisco_hx_fi') }}"
+  connection: local
+  # vars:
+  # vars_files:
+  #   - "./inventory/group_vars/cisco_hx_fi/vars"
+  #   - "./inventory/group_vars/cisco_hx_fi/vault"
+  #   - "./inventory/group_vars/cisco_intersight/vars"
+  #   - "./inventory/group_vars/cisco_intersight/vault"
+  tasks:
+    - name: Login into UCSM
+      include_tasks: ucsm_api_login.yml
+    - name: Get device connector status from UCSM
+      include_tasks: ucsm_get_device_connector_status.yml
+    - name: Enable device connector status on UCSM 
+      include_tasks: ucsm_enable_device_connector.yml
+    - name: Get device identifier from UCSM
+      include_tasks: ucsm_get_device_identifier.yml
+    - name: Get claim code from UCSM
+      include_tasks: ucsm_get_claim_code.yml
+
+      
+- name: API Login to Intersight and Claim Device
+  hosts: "{{ group | default('cisco_intersight') }}"
+  connection: local
+  gather_facts: false
+  vars:
+    # intersight_api_login_info: &intersight_api_login_info
+    #   private_key:    "{{ intersight_api_private_key }}"
+    #   key_id:         "{{ intersight_api_key_id }}"
+    #   uri:            "{{ intersight_api_uri | default(omit) }}"
+    #   validate_certs: "{{ intersight_validate_certs | default(omit) }}"
+    #   state:          "{{ intersight_state | default(omit) }}"
+  
+  tasks:
+    # # Another option
+    # - name: Register dummy host with variable
+    #   add_host:
+    #     name: "DUMMY_HOST"
+    #     intersight_api_info: *intersight_api_login_info
+
+    # - debug:
+    #     msg: "API Info is: {{ intersight_api_login_info }}"
+
+    - name: Claim UCSM FI as a target in Intersight
+      include_tasks: intersight_claim_target.yml
+
+    - name: Update HX-FI server inventory
+      include_tasks: intersight_update_hx_fi_inventory.yml
+    
+      # - debug:
+      #     msg: "server name {{ item.Name }}, moid {{ item.Moid }}"
+      #   loop: "{{ intersight_servers }}"
+      #   when: cisco_intersight_hx_fi_servers is defined
+
+- name: Configure and deploy HyperFlex Standard Cluster from Intersight
+  hosts: "{{ group | default('cisco_intersight_hx_std') }}"
+  connection: local
+  gather_facts: false
+  vars:
+    # intersight_api_login_info: &intersight_api_login_info
+    #   private_key:    "{{ intersight_api_private_key }}"
+    #   key_id:         "{{ intersight_api_key_id }}"
+    #   uri:            "{{ intersight_api_uri | default(omit) }}"
+    #   validate_certs: "{{ intersight_validate_certs | default(omit) }}"
+    #   state:          "{{ intersight_state | default(omit) }}"
+    #
+    # Dependencies: 
+    #   - HyperFlex Cluster Profile Name (also HyperFlex Cluster Name)
+  tasks:
+
+    - name: Create HyperFlex Cluster Configuration (Profiles, Policies) for deployment - Standard Cluster
+      include_tasks: intersight_create_hx_std_cluster_configuration.yml
+      vars:
+      tags: create_hx_std_cluster_configuration
+    
+    - name: Assign Nodes to HyperFlex Cluster Profile for deployment - Standard Cluster
+      include_tasks: intersight_assign_nodes_to_hx_std_cluster_profile.yml
+      vars:
+      tags: assign_nodes_to_hx_std_cluster
+
+    - name: Prompt user for Deployment Action (Validate or Validate & Deploy)
+      block:
+
+        - name: Prompt for deployment action
+          pause:
+            prompt: "Select deplyoyment action. Would you like to [1] Validate Only or [2] Validate & Deploy? (1/2)"
+            echo: yes
+          register: prompt_action_response
+          run_once: true
+      
+        - name: Validate HyperFlex Cluster Configuration for deployment - Standard Cluster
+          vars:
+          include_tasks: intersight_validates_hx_std_cluster_configuration.yml
+          when: prompt_action_response.user_input == '1'
+          tags: validate_hx_std_cluster
+      
+        - name: Deploy HyperFlex Standard Cluster
+          vars:
+          include_tasks: intersight_deploy_hx_std_cluster.yml
+          when:
+            - prompt_action_response.user_input == '2'
+            # - validation_status is not Errored
+          tags: deploy_hx_std_cluster
+
+        # Options to Continue, Abort, Retry when there is a failure in the above two options
+
+

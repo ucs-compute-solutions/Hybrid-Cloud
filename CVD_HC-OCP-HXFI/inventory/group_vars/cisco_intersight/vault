@@ -1,0 +1,4 @@
+---
+#[cisco_intersight:vars]
+vault_intersight_api_private_key: "~/Downloads/SecretKey.txt"
+vault_intersight_api_key_id: "611dc01f7564612d331700c4/611dc01f7564612d331700c8/62ba1b9d7564612d30d7bfed"

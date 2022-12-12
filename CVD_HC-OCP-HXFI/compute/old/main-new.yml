@@ -1,0 +1,125 @@
+---
+- name: Play for API Login to UCSM to collect device claim info (for use by Intersight)
+  hosts: HX_FI
+  connection: local
+  collections:
+  # Add a requirements file for collections
+  - cisco.ucs
+  gather_facts: true 
+  vars: 
+  # create api login anchor for use by multiple plays within this file
+  # ? Can we use a vars_file but the info is still dynamically collected? Worth it? 
+  # This will be commented out in inidividual plays but can be left here to test the tasks quickly
+    api_login_info: &api_login_info
+      hostname: "{{ inventory_hostname }}"
+      username: "{{ username | default('admin') }}"
+      password: "{{ password }}"
+      state:    "{{ state | default(omit) }}"
+  tasks: 
+    # API Login Task !! remove later!!
+    - name: Login to UCSM 
+      ucs_managed_objects:
+        <<: *api_login_info
+        objects:
+        - module: ucsmsdk.mometa.cloud.CloudDeviceConnectorEp
+          class: CloudDeviceConnectorEp
+          properties:
+            parent_mo_or_dn: sys/cloud-mgmt
+            #claim_state: claimed
+            #admin_state: enabled
+            #description: 'Hello!' 
+      register: device_connector_info
+    - debug:
+        #msg: "UCS state is {{ state }}"
+        msg: "Device Connector Info is {{ device_connector_info }}"
+        #var: device_connector_info
+        #verbosity: 4
+
+
+          # - {
+          #     "module": "ucsmsdk.mometa.compute.ComputePortDiscPolicy",
+          #     "module": sys/cloud-mgmt/device-connector
+          #     "class": "ComputePortDiscPolicy",
+          #     "properties": {
+          #         "parent_mo_or_dn": "org-root",
+          #         "eth_svr_auto_discovery": "enabled"
+          #     }
+          #   }
+
+
+# EXAMPLES = r'''
+# - name: Configure Network Control Policy
+#   cisco.ucs.ucs_managed_objects:
+#     hostname: 172.16.143.150
+#     username: admin
+#     password: password
+#     objects:
+#     - module: ucsmsdk.mometa.nwctrl.NwctrlDefinition
+#       class: NwctrlDefinition
+#       properties:
+#         parent_mo_or_dn: org-root
+#         cdp: enabled
+#         descr: ''
+#         lldp_receive: enabled
+#         lldp_transmit: enabled
+#         name: Enable-CDP-LLDP
+
+
+
+# - name: Play_Claim UCSM Managed hosts in Intersight
+#   hosts: "{{ group | default('HX_FI') }}"
+#   connection: local
+#   gather_facts: false
+#   tasks:
+#     #- include_tasks: ../intersight-python-utils/config_targets/HC_claim.yml
+#     - include_tasks: HC_ClaimDevice_Task.yml
+#       vars:
+#       # override on command line if needed
+#         target_hostname: "{{ inventory_hostname }}"
+#         target_username: "{{ username | default('admin') }}"
+#         target_password: "{{ password }}"
+#         platform_type: "{{ device_type | default('ucs') }}"
+#         target_proxy_host: "{{ proxy_host | default('') }}"
+#         target_proxy_port: "{{ proxy_port | default(0) }}"
+#         target_read_only: "{{ read_only | default(false) }}"
+#         target_resource_groups: "{{ resource_groups | default(omit) }}"
+
+    #- tags: Ansible_Intersight
+
+# - name: Play_Setup HCI via Intersight
+#   hosts: all
+#   connection: local
+#   gather_facts: false
+
+
+# ---
+# #
+# # The hosts group used is provided by the group variable or defaulted to 'Intersight_Servers'.
+# # You can specify a specific host (or host group) on the command line:
+# #   ansible-playbook ... -e group=<your host group>
+# #   e.g., ansible-playbook server_profiles.yml -e group=TME_Demo
+# #
+# - hosts: "{{ group | default('Intersight_Servers') }}"
+#   connection: local
+#   gather_facts: false
+#   vars:
+#     # Create an anchor for api_info that can be used throughout the file
+#     api_info: &api_info
+#       api_private_key: "{{ api_private_key }}"
+#       api_key_id: "{{ api_key_id }}"
+#       api_uri: "{{ api_uri | default(omit) }}"
+#       validate_certs: "{{ validate_certs | default(omit) }}"
+#       state: "{{ state | default(omit) }}"
+#   tasks:
+#     # Claim device
+#     - name: Claim device
+#       cisco.intersight.intersight_rest_api:
+#         <<: *api_info
+#         resource_path: /asset/DeviceClaims
+#         api_body: {
+#           "SecurityToken": "{{ SecurityToken }}",
+#           "SerialNumber": "{{ SerialNumber }}"
+#         }
+#         update_method: post
+#       delegate_to: localhost
+#       run_once: true
