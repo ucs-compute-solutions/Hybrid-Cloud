@@ -1,0 +1,59 @@
+---
+
+#-------------------------------------------------------------------------------------
+#  Get Device Identifier if UCSM is not already claimed in Intersight
+#-------------------------------------------------------------------------------------
+
+- name: Get Device Identifier from UCSM
+  block:
+    - name: Get Device Identifier 
+      ansible.builtin.uri:
+        url: "https://{{ inventory_hostname }}/connector/DeviceIdentifiers"
+        method: GET
+        headers:
+          Content-Type: application/json
+          Ucsmcookie: "ucsm-cookie={{ hostvars['DUMMY_HOST']['ucsm_cookie'] }}"
+        status_code: 200
+        return_content: yes
+        body_format: json
+        validate_certs: no
+      register: response
+      tags: ucsm_device_id
+
+    - name: Print response to Get Device Identifier from UCSM 
+      debug: 
+        msg: "Response from Get Device Identifier is: {{ response.content }}"
+      #tags: [never, debug, always, ucsm_device_id]
+      tags: always
+
+
+    - name: Set Device Identifier 
+      ansible.builtin.set_fact:
+        ucsm_device_id_fact: "{{ response.content }}"
+      tags: ucsm_device_id
+
+
+    - name: Save Device Identifier variable
+      ansible.builtin.set_fact:
+        ucsm_device_id: "{{ ucsm_device_id_fact[0]['Id'] }}"
+        #ucsm_device_id: "{{ response.json[0].Id }}"
+      tags: ucsm_device_id
+
+    - name: Print UCSM Device Identifier
+      debug: 
+        msg: "UCSM Device Identifier is: {{ ucsm_device_id }}"
+      #tags: [never, debug, always, ucsm_device_id]
+      tags: always
+
+  # --- multiple options---
+  #when: ucsm_device_connector_status != "Claimed"
+  when: hostvars['DUMMY_HOST']['ucsm_device_connector_status'] != "Claimed"
+#-------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+

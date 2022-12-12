@@ -1,0 +1,79 @@
+---
+
+#-------------------------------------------------------------------------------------
+#  Create HyperFlex Cluster Node Config Policy
+#-------------------------------------------------------------------------------------
+
+- name: Define anchor for Intersight API login info 
+  set_fact:
+    intersight_api_login_info: &intersight_api_login_info
+      api_private_key:         "{{ intersight_api_private_key }}"
+      api_key_id:              "{{ intersight_api_key_id }}"
+      api_uri:                 "{{ intersight_api_uri | default(omit) }}"
+      validate_certs:          "{{ intersight_validate_certs | default(omit) }}"
+      state:                   "{{ intersight_state | default(omit) }}"
+  run_once: true
+
+- name: Create HyperFlex Node Config Policy and return Moid
+  intersight_rest_api:
+    <<: *intersight_api_login_info
+    resource_path:  /hyperflex/NodeConfigPolicies
+    query_params:
+      $filter: "Name eq '{{ hx_node_config_policy_name }}'"
+    api_body: {
+      "Organization": {
+        "Moid":           "{{ organization_moid }}"
+      },
+      "Name":             "{{ hx_node_config_policy_name }}",
+      "MgmtIpRange":{
+        "StartAddr":      "{{ hx_mgmt_network_ip_start }}",
+        "EndAddr":        "{{ hx_mgmt_network_ip_end }}",
+        "Netmask":        "{{ hx_mgmt_network_subnet_mask }}",
+        "Gateway":        "{{ hx_mgmt_network_gateway }}"
+      },
+      "HxdpIpRange":{
+        "StartAddr":      "{{ hx_mgmt_network_ctrlr_vm_ip_start }}",
+        "EndAddr":        "{{ hx_mgmt_network_ctrlr_vm_ip_end }}",
+        # "Netmask":      "{{ hx_mgmt_network_netmask }}",
+        # "Gateway":      "{{ hx_mgmt_network_gateway }}"
+      },
+      "ClusterProfiles": [
+        {
+        "Moid":           "{{ hx_cluster_profile_moid }}"
+        }
+      ]
+    }
+    state: present
+  register: hx_node_config_policy_response
+  run_once: true
+  delegate_to: local_host
+  tags: 
+    - hx_node_config_policy
+    - never
+    #- never, debug, always
+
+- name: Query for an existing HyperFlex Node Config Policy and return Moid
+  intersight_rest_api:
+    <<: *intersight_api_login_info
+    resource_path: /hyperflex/NodeConfigPolicies
+    query_params:
+      $filter: "Name eq '{{ hx_node_config_policy_name }}'"
+    state: present
+  register: hx_node_config_policy_response
+  run_once: true
+  delegate_to: local_host
+  tags: 
+    - hx_node_config_policy
+
+
+- name: Moid for HyperFlex Node Config Policy
+  set_fact:
+    hx_node_config_policy_moid: "{{ hx_node_config_policy_response.api_response.Moid }}"
+  run_once: true
+
+- name: Print status of 'Create HyperFlex Cluster Node Config' policy
+  debug:
+    msg: "Created HyperFlex Node Config Policy '{{ hx_node_config_policy_name }}' with Moid: '{{ hx_node_config_policy_moid }}'"  
+  #tags: [never, debug, always]
+
+  #-----------------------------------------------------------------------------------------
