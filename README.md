@@ -21,3 +21,23 @@ The playbooks, inventory files and variables for provisioning the on-prem infras
 ### Cisco ACI
 
 ![alt text](files/location_aci_topology.png)
+
+## Execution Workflow
+
+1. Setup an Ansible Control Node - you will use this workstation to run the ansible playbooks
+2. From a terminal window, navigate to the directory where you'd like to clone the above GitHub repo to. The playbooks are located in the https://github.com/ucs-compute-solutions/Hybrid-Cloud repository. 
+3. From the terminal window, run the following command to clone the repo. 
+```
+https://github.com/ucs-compute-solutions/Hybrid-Cloud.git
+```
+4. Navigate to the **CVD_HC-OCP-HXFI** directory. You will find the playbooks for HyperFlex VSI playbooks and Cisco ACI in the in the **compute** and **network** sub-directories. 
+5. Update the inventory file and variables file shown in the figure above with networking information for your environment. 
+6. Navigate to the **network** sub-directory and execute the main network playbook as shown below:
+```
+CVD_HC-OCP-HXFI $ ansible-playbook network/00_main_deploy_dc-fabric.yml -i inventory/inventory_main.ini
+```
+7. Update the inventory file and variables file shown in the figure above with HyperFlex VSI information for your environment. 
+8. Navigate to the **compute** sub-directory and execute the main compute playbook as shown below:
+```
+CVD_HC-OCP-HXFI $ ansible-playbook compute/00_main_deploy_hx-std.yml -i inventory/inventory_main.ini
+```
