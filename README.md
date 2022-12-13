@@ -7,16 +7,17 @@ The end-to-end topology for the solution is shown in the figure below:
 
 ![alt text](files/solution_topology.webp)
 
-The Ansible playbooks provided in this repo will automate the on-prem compute, network and virtualization layer infrastructure in the solution. 
+The Ansible playbooks provided in this repo will automate the on-prem compute, network and virtualization layer infrastructure in the solution. The playbooks will do the day-2 configuration necessary to support a new Application HyperFlex VSI and day0-1 provision of the HyperFlex VSI cluster. 
 
 ![alt text](files/Automation_topology.png)
 
-## Ansible Directory Structure - Location of Playbooks, Inventory and Variables 
+## Ansible Directory Structure - Playbooks, Inventory and Variables 
 The playbooks, inventory files and variables for provisioning the on-prem infrastructure in the solution topology are located in the following files and directores:
 
-* HyperFlex VSI Playbooks:  CVD_HC-OCP-HXFI/compute
-* Networking Playbooks: CVD_HC-OCP-HXFI/network
-* Inventory and Variables: CVD_HC-OCP-HXFI/inventory
-  - Inventory file: inventory_main.ini
-  - HyperFlex VSI Variables: group_vars/cisco_hx_fi, group_vars/cisco_intersight, group_vars/cisco_intersight_hx_std
-  - Networking Variables: groups_vars/cisco_dc_fabric
+### Cisco HyperFlex VSI
+
+![alt text](files/location_hxvsi_topology.png)
+
+### Cisco ACI
+
+![alt text](files/location_aci_topology.png)
