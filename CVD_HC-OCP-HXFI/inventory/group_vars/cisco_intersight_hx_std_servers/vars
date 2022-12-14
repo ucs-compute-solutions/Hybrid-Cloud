@@ -1,7 +1,15 @@
 ---
-# Note:
-#      - Sensitive Data is saved in Ansible Vault. These variables will have a name that starts with 'vault_'
-#      - Software versions shown here reflects the initial version used during deployment and may have been upgraded subsequently
+##################################################################################################
+# 
+#  Variables for Day-0/1 deployment and provisioning of a Cisco HyperFlex VSI cluster - modify as 
+#  needed for your environment. This Application cluster will host Red Hat OCP cluster(s).
+#   
+#  Note_1: Sensitive data is saved in Ansible Vault; variable name will start with 'vault_'
+#  Note_2: Software versions shown here reflects the versions used for initial deployment. Cluster
+#          has been upgraded since then for the final release of CVD.
+#  
+##################################################################################################
+
 
 # Parameters for creating an Intersight Resource
 #

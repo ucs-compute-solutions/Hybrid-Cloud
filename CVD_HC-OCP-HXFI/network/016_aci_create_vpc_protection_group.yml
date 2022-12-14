@@ -11,11 +11,11 @@
           use_ssl:              "{{ apic_use_ssl | default(true) }}"
           validate_certs:       "{{ apic_validate_certs | default(false) }}"
         
-        protection_group_name:  "vpc-explictGrp1103104"
-        protection_group_id:    12
-        #vpc_domain_policy:      ""
-        switch_1_id: 103
-        switch_2_id: 104
+        # protection_group_name:  "vpc-explictGrp1103104"
+        # protection_group_id:    12
+        # #vpc_domain_policy:      ""
+        # switch_1_id: 103
+        # switch_2_id: 104
 
     - debug:
         msg: "API Info is: {{ aci_api_login_info }}"
