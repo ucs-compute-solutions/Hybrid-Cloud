@@ -20,7 +20,7 @@
     - name: Create CDP Interface Policy to enable CDP
       cisco.aci.aci_interface_policy_cdp:
         <<: *aci_api_login_info
-        name: CDP_Enabled
+        name: "{{ cdp_policy_name }}"
         annotation: orchestrator:ansible
         admin_state: true
         state: present
@@ -30,7 +30,7 @@
     - name: Create a Link Level Policy to set link speed
       cisco.aci.aci_interface_policy_link_level:
         <<: *aci_api_login_info
-        link_level_policy: 40Gbps-Link
+        link_level_policy: "{{link_level_policy_name}}"
         annotation: orchestrator:ansible
         description: 
         speed: 40G
@@ -42,7 +42,7 @@
     - name: Create a LLDP interface policy to enable LLDP
       cisco.aci.aci_interface_policy_lldp:
         <<: *aci_api_login_info
-        lldp_policy: LLDP-Enabled
+        lldp_policy: "{{lldp_policy_name}}"
         annotation: orchestrator:ansible
         description: 
         receive_state: 
@@ -53,7 +53,7 @@
     - name: Create a port channel interface policy
       cisco.aci.aci_interface_policy_port_channel:
         <<: *aci_api_login_info
-        port_channel: LACP-Active
+        port_channel: "{{port_channel_policy_name}}"
         annotation: orchestrator:ansible
         description: 
         min_links: 
@@ -65,9 +65,12 @@
     - name: Create a Layer 2 interface policy
       cisco.aci.aci_interface_policy_l2:
         <<: *aci_api_login_info
-        l2_policy: VLAN-Scope-Local
+        l2_policy: "{{l2_interface_policy_name}}"
         annotation: orchestrator:ansible
         vlan_scope: portlocal
         description: 
       delegate_to: localhost
       #tags: [never, interface_policies]
+
+    # STP Interface Policy
+    #  - Configured via GUI (can also use REST API)

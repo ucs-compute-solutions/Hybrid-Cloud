@@ -11,12 +11,12 @@
           use_ssl:          "{{ apic_use_ssl | default(true) }}"
           validate_certs:   "{{ apic_validate_certs | default(false) }}"
         
-        vlan_pool_name:     HXV-FI_VlanPool
-        vlan_pool_type:     dynamic
-        vlan_list: 
-              - { name: 'hxv-cl3-storage-data', from: 1273, to: 1273 }
-              - { name: 'hxv-vm-network', from: 1521, to: 1522 }   
-              - { name: 'hxv-cl3-iscsi', from: 3013, to: 3013 }    
+        # vlan_pool_name:     HXV-FI_VlanPool
+        # vlan_pool_type:     dynamic
+        # vlan_list: 
+        #       - { name: 'hxv-cl3-storage-data', from: 1273, to: 1273 }
+        #       - { name: 'hxv-vm-network', from: 1521, to: 1522 }   
+        #       - { name: 'hxv-cl3-iscsi', from: 3013, to: 3013 }    
 
     - debug:
         msg: "API Info is: {{ aci_api_login_info }}"

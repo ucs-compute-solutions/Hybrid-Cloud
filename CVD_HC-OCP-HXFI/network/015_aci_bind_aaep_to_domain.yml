@@ -11,8 +11,8 @@
           use_ssl:              "{{ apic_use_ssl | default(true) }}"
           validate_certs:       "{{ apic_validate_certs | default(false) }}"
         
-        domain_name:            HXV-FI_Domain 
-        domain_type:            l2dom
+        # domain_name:            HXV-FI_Domain 
+        # domain_type:            l2dom
         # vlan_pool_name:
         # vlan_pool_type:
 

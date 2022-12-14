@@ -11,8 +11,8 @@
           use_ssl:              "{{ apic_use_ssl | default(true) }}"
           validate_certs:       "{{ apic_validate_certs | default(false) }}"
         
-        domain_name:            HXV-FI_Domain 
-        domain_type:            l2dom
+        # domain_name:            HXV-FI_Domain 
+        # domain_type:            l2dom
 
     - debug:
         msg: "API Info is: {{ aci_api_login_info }}"
