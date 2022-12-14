@@ -17,8 +17,9 @@ apic_password: "{{vault_apic_password}}"
 
 
 #---------------------------------------------------------------------------------------------------------
-# Parameters for access layer connectivity to Cisco UCS Fabric Interconnects and Cisco HyperFlex servers   
+# Parameters for access layer connectivity to Cisco UCS FIs and HyperFlex servers   
 #---------------------------------------------------------------------------------------------------------
+
 vlan_pool_name:     HXV-FI_VlanPool
 vlan_pool_type:     dynamic
 vlan_list: 
@@ -36,45 +37,73 @@ domain_name:        HXV-FI_Domain
 domain_type:        l2dom
 
 #---------------------------------------------------------------------------------------------------------
-protection_group_name:  "vpc-explictGrp1103104"
-protection_group_id:    12
-#vpc_domain_policy:      ""
-switch_1_id: 103
-switch_2_id: 104
+
+protection_group_name:          "vpc-explictGrp1103104"
+protection_group_id:            12
+#vpc_domain_policy:             " "
+switch_1_id:                    103
+switch_2_id:                    104
 
 
-cdp_policy_name:            CDP-Enabled
-link_level_policy_name:     40Gbps-Link
-lldp_policy_name:           LLDP-Enabled
-port_channel_policy_name:   LACP-Active
-l2_interface_policy_name:   VLAN-Scope-Local
+cdp_policy_name:                CDP-Enabled
+link_level_policy_name:         40Gbps-Link
+lldp_policy_name:               LLDP-Enabled
+port_channel_policy_name:       LACP-Active
+l2_interface_policy_name:       VLAN-Scope-Local
 # Configured via GUI (can also use REST API)
-stp_interface_policy_name:  BPDU-FG-Enabled
+stp_interface_policy_name:      BPDU-FG-Enabled
 
 
 interface_policy_group_list: 
-- HXV-FI-6300-A1_IPG
-- HXV-FI-6300-B1_IPG
+                                - HXV-FI-6300-A1_IPG
+                                - HXV-FI-6300-B1_IPG
 
 
 interface_profile_name:         HXV-FI-6300-1_IPR
 interface_profile_description:  HC-HXV
 interface_policy_group_list: 
-- HXV-FI-6300-A1_IPG
-- HXV-FI-6300-B1_IPG
+                                - HXV-FI-6300-A1_IPG
+                                - HXV-FI-6300-B1_IPG
 # Add logic to create name using port id
 access_port_selector_list:
-- { name: 'HXV-FI_p1_1', portblk: 'port_block_1', from_card: '1', to_card: '1', from_port: '1', to_port: '1', ipg: "{{ interface_policy_group_list[0] }}"}
-- { name: 'HXV-FI_p1_2', portblk: 'port_block_2', from_card: '1', to_card: '1', from_port: '2', to_port: '2', ipg: "{{ interface_policy_group_list[1] }}"}
+                                - { name: 'HXV-FI_p1_1', portblk: 'port_block_1', from_card: '1', to_card: '1', from_port: '1', to_port: '1', ipg: "{{ interface_policy_group_list[0] }}"}
+                                - { name: 'HXV-FI_p1_2', portblk: 'port_block_2', from_card: '1', to_card: '1', from_port: '2', to_port: '2', ipg: "{{ interface_policy_group_list[1] }}"}
 
-leaf_profile: HXV-UCS_FI-Leaf_103-104_PR
-leaf_selectors: HXV-UCS_FI-Leaf_103-104
-# interface_selector_profile: HXV-FI-6300-1_IPR
+leaf_profile:                   HXV-UCS_FI-Leaf_103-104_PR
+leaf_selectors:                 HXV-UCS_FI-Leaf_103-104
+
 
 #---------------------------------------------------------------------------------------------------------
-vpc_explicit_grp_name:              "HC_RG"
 
-# If using Cisco FIs
-fi_a_ipg:                           "Hybrid Cloud Resource Group"
-fi_b_ipg:                           ""
+infra_hx_hc_cl3: 
+          - tenant:       { name: HXV-Foundation, description: HyperFlex Infrastructure Tenant For Hybrid Cloud }
+          - vrf:          { name: HXV-Foundation_VRF, description: HyperFlex Infrastructure VRF For Hybrid Cloud }
+          - bridge_domains: 
+                        # - { name: HXV-IB-MGMT_BD, description: IB-MGMT for HC-CL3, 
+                        #     gateway: 10.1.171.254, mask: 255.255.255.0, scope: shared, 
+                        #     settings: { host_routing: true, unicast_routing: true } }
+                        # - { name: HXV-vMotion_BD, description: vMotion for HC-CL3 }
+                        - { name: HXV-CL3-StorData_BD, description: Storage Data for HC-CL3 }
+                        - { name: HXV-CL3-iSCSI_BD, description: iSCSI for HX CSI on HC-CL3 }
+          - application_profiles:  
+                        # - { name: HXV-IB-MGMT_AP, description: IB-MGMT for HC-CL3}
+                        # - { name: HXV-vMotion_AP, description: vMotion for HC-CL3 }
+                        # - { name: HXV-StorData_AP, description: Storage Data for HC-CL3 }      
+          - epgs: 
+              - { name: HXV-IB-MGMT_EPG, description: IB-MGMT for HC-CL3, bd: HXV-IB-MGMT_BD, ap: HXV-IB-MGMT_AP, 
+                  access: { encap: 1171, type: vpc, pod_id: 1, leafs: 103-104, 
+                            interface_1: "{{ interface_policy_group_list[0] }}", interface_2: "{{ interface_policy_group_list[1] }}" } }
+              - { name: HXV-vMotion_EPG, description: vMotion for HC-CL3, bd: HXV-vMotion_BD, ap: HXV-vMotion_AP, 
+                  access: { encap: 1371, type: vpc, pod_id: 1, leafs: 103-104, 
+                            interface_1: "{{ interface_policy_group_list[0] }}", interface_2: "{{ interface_policy_group_list[1] }}" } }
+              - { name: HXV-CL3-StorData_EPG, description: Storage Data for HC-CL3, bd: HXV-CL3-StorData_BD, ap: HXV-StorData_AP, 
+                  access: { encap: 1273, type: vpc, pod_id: 1, leafs: 103-104, 
+                            interface_1: "{{ interface_policy_group_list[0] }}", interface_2: "{{ interface_policy_group_list[1] }}" } }
+              - { name: HXV-CL3-iSCSI_EPG, description: iSCSI for HX CSI on HC-CL3, bd: HXV-CL3-iSCSI_BD, ap: HXV-StorData_AP, 
+                  access: { encap: 3013, type: vpc, pod_id: 1, leafs: 103-104, 
+                            interface_1: "{{ interface_policy_group_list[0] }}", interface_2: "{{ interface_policy_group_list[1] }}" } }
+
+#---------------------------------------------------------------------------------------------------------
+
+
 
