@@ -11,7 +11,6 @@
           use_ssl:              "{{ apic_use_ssl | default(true) }}"
           validate_certs:       "{{ apic_validate_certs | default(false) }}"
 
-
     - debug:
         msg: "API Info is: {{ aci_api_login_info }}"
       tags: [never, debug]

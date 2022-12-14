@@ -1,11 +1,16 @@
 ---
+###########################################################################################
+#
+#  Configure tenant policies and profiles to enable connectivity to Cisco HyperFlex VSI
+#
+###########################################################################################
 
-  #########################################################################################################
-  #    
-  #   To test the tasks in this file, uncomment the info below to make it a playbook
-  #
-  #########################################################################################################
-  
+
+#----------------------------------------------------------------------------------------
+#  To test only the tasks in this file, uncomment the info below to make the task a 
+#  playbook and run the playbook using the name of this file. 
+#----------------------------------------------------------------------------------------
+
   # - name: API Login to Cisco APIC 
   #   hosts: "{{ group | default('cisco_network_dc_fabric') }}"
   #   connection: local
@@ -17,21 +22,18 @@
   #       password:         "{{ apic_password }}"
   #       use_proxy:        "{{ apic_use_proxy | default(false) }}"
   #       validate_certs:   "{{ apic_validate_certs | default(false) }}"
-  #     Dependencies:
-  #       - Test:           "{{  }}"
+  #     Dependencies: none
   #   tasks:
   #     - debug:
   #         msg: "API Info is: {{ intersight_api_login_info }}"
   #       tags: [never, debug]
 
-  #########################################################################################################
-  #    
+
+  #-------------------------------------------------------------------------------------- 
   #   1. Create Tenant, VRF, BD, AP, EPG and Contracts. 
   #   2. Map EPG/VLAN to access layer VPC to HC-HXV cluster
-  #
-  #########################################################################################################
+  #--------------------------------------------------------------------------------------
 
-        # Tenant, VRF, BD, AP, EPG
       - name: Create Infra Tenant
         include_tasks: 021_aci_create_tenant.yml
         vars:
@@ -66,4 +68,6 @@
         include_tasks: 027_aci_deploy_static_epg_on_vpc.yml
         vars:
         tags: infra_epgs_to_vpc
+
+#--------------------------------------------------------------------------------------
 
